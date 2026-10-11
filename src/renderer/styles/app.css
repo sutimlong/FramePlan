@@ -1,0 +1,371 @@
+@import './components.css';
+@import './days.css';
+
+/*
+ * 應用程式字型：Abenda。
+ * 字型檔內嵌於本專案，啟動時由主程序安裝到使用者的字型資料夾（見 src/main/fonts.ts）。
+ * 此字型僅套用在側邊欄的應用程式名稱（.brand）作為識別字；其餘介面文字與 PDF 匯出
+ * 一律沿用系統字型，避免拉丁字型與中文字（蘋方）混排時字寬與字重不一致。
+ * Abenda 僅涵蓋 ASCII 與拉丁補充字元、且只有 Regular 字面，粗體由瀏覽器合成。
+ */
+@font-face {
+  font-family: 'Abenda';
+  src: url('./fonts/Abenda.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #f4f4f1;
+  --panel: #ffffff;
+  --line: #deded8;
+  --text: #1c1c1a;
+  --muted: #7a7a72;
+  --accent: #111111;
+  --danger: #c0392b;
+  font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', sans-serif;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  font-size: 13px;
+}
+
+.app {
+  display: flex;
+  height: 100%;
+}
+
+.sidebar {
+  width: 190px;
+  flex: none;
+  padding: 44px 10px 10px;
+  background: #ebebe6;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  -webkit-app-region: drag;
+}
+
+.sidebar button {
+  -webkit-app-region: no-drag;
+}
+
+/* 應用程式名稱：唯一使用 Abenda 的地方（中文字元仍會自動 fallback 到蘋方） */
+.brand {
+  font-family: 'Abenda', -apple-system, 'PingFang TC', 'Helvetica Neue', sans-serif;
+  font-weight: 700;
+  font-size: 23.4px;
+  line-height: 1.25;
+  padding: 0 10px 14px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: rgba(0, 0, 0, .06);
+}
+
+.nav-item.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.nav-item.preview-btn {
+  background: #1c1c1a;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.nav-item.preview-btn:hover {
+  background: #333;
+}
+
+.nav-item.preview-btn.active {
+  background: #000;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px 10px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  -webkit-app-region: drag;
+}
+
+.toolbar button {
+  -webkit-app-region: no-drag;
+}
+
+.toolbar-name {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e67e22;
+  display: inline-block;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.view {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.btn:hover {
+  background: #f0f0ec;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.btn.primary:hover {
+  background: #333;
+}
+
+.btn.small {
+  padding: 4px 9px;
+  font-size: 12px;
+}
+
+.btn:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.icon-btn {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+}
+
+.icon-btn:hover {
+  background: #eee;
+  color: var(--text);
+}
+
+.icon-btn.danger:hover {
+  background: #fdecea;
+  color: var(--danger);
+}
+
+.view-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-head h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+}
+
+.g2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.g3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.field.compact {
+  flex: none;
+  width: 110px;
+}
+
+.field.w-sm {
+  flex: none;
+  width: 70px;
+}
+
+.field.w-md {
+  flex: none;
+  width: 130px;
+}
+
+.field.span2 {
+  grid-column: span 2;
+}
+
+.field-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+input,
+select {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  min-width: 0;
+  width: 100%;
+}
+
+input:focus,
+select:focus,
+.slate-editable:focus {
+  outline: 2px solid #111;
+  outline-offset: -1px;
+}
+
+.row-inline {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 24px 0;
+  margin: 0;
+}
+
+.place h4,
+.sub,
+.note-block h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+
+.place {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}

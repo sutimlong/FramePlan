@@ -1,0 +1,17 @@
+# 依賴
+node_modules/
+
+# 建置產物（由 `npm run build` / `electron-builder` 產生）
+dist/
+dist-electron/
+release/
+
+# macOS 系統檔
+.DS_Store
+._*
+
+# 日誌
+*.log
+
+# 根目錄重複的圖示副本（正式資源在 build/FramePlan_icon.icon）
+/FramePlan_icon.icon/

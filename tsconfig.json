@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": { "@shared/*": ["src/shared/*"], "@/*": ["src/renderer/*"] }
+  },
+  "include": ["src/renderer", "src/shared"],
+  "exclude": [
+    "src/renderer/App.tsx",
+    "src/renderer/lib/validate.ts",
+    "src/renderer/store/useSchedStore.ts",
+    "src/renderer/components/general/GeneralView.tsx",
+    "src/renderer/components/general/NotesView.tsx",
+    "src/renderer/components/cast/CastView.tsx",
+    "src/renderer/components/crew/CrewView.tsx",
+    "src/renderer/components/rundown/RundownView.tsx",
+    "src/renderer/components/layout/Toolbar.tsx",
+    "src/renderer/components/print/CallsheetPrintView.tsx",
+    "src/renderer/components/print/PageOne.tsx",
+    "src/renderer/components/print/PageTwo.tsx",
+    "src/renderer/components/print/Tables.tsx",
+    "src/renderer/components/print/PrintParts.tsx"
+  ]
+}

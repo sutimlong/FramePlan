@@ -1,0 +1,58 @@
+appId: com.frameplan.callsheetbuilder
+productName: FramePlan
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - src/preload/preload.cjs
+  - package.json
+extraResources:
+  # 應用程式字型：主程序啟動時會複製到使用者的字型資料夾（見 src/main/fonts.ts）
+  - from: src/renderer/styles/fonts/Abenda.ttf
+    to: fonts/Abenda.ttf
+mac:
+  category: public.app-category.productivity
+  # 應用程式圖示：Apple Icon Composer 的 .icon 格式（本體是資料夾，內含 icon.json 與 Assets/）。
+  # electron-builder 26+ 會呼叫 actool 將它編譯成 Assets.car 與 icns，並自動設定
+  # Info.plist 的 CFBundleIconName／CFBundleIconFile，同時用於 DMG 的卷宗圖示。
+  # 前置需求：macOS 26+ 與 Xcode 26+（actool 版本需 ≥ 26.0.0，本機為 Xcode 27 已符合）。
+  icon: build/FramePlan_icon.icon
+  target:
+    - dir
+    - dmg
+  extendInfo:
+    # 為什麼需要下面兩段（實測結論，請勿任意刪除）：
+    # 若只用 fileAssociations（＝Info.plist 的 CFBundleTypeExtensions）宣告 .sched，
+    # macOS 會為它建立一個「動態 UTI」(dyn.xxxxxxxx)。動態 UTI 的圖示一旦被系統快取，
+    # 之後就算改掉 CFBundleTypeIconFile、換掉 icns 內容、換 App 路徑或改
+    # CFBundleVersion，Finder 仍會顯示舊圖示（實測會一直顯示 Electron 的 Atom 圖示）。
+    # 解法：自行匯出一個 UTI（UTExportedTypeDeclarations），並讓 App 以文件類型身分
+    # 認領它（LSItemContentTypes）。.sched 就會對應到這個新 UTI，
+    # 系統會自動為其合成包含 App 圖示的白紙折角文件圖示。
+    UTExportedTypeDeclarations:
+      - UTTypeIdentifier: com.frameplan.callsheetbuilder.sched
+        UTTypeDescription: FramePlan 通告表
+        UTTypeConformsTo:
+          - public.data
+        UTTypeTagSpecification:
+          public.filename-extension:
+            - sched
+    # 這裡的項目會與 fileAssociations 產生的項目合併
+    # （見 app-builder-lib/out/electron/electronMac.js 中 CFBundleDocumentTypes 的合併邏輯）
+    CFBundleDocumentTypes:
+      - CFBundleTypeName: Callsheet Schedule
+        CFBundleTypeRole: Editor
+        LSHandlerRank: Default
+        CFBundleTypeExtensions:
+          - sched
+        # 認領上面宣告的 UTI，否則 UTI 不會生效（.sched 仍會走舊的動態 UTI）
+        LSItemContentTypes:
+          - com.frameplan.callsheetbuilder.sched
+fileAssociations:
+  - ext: sched
+    name: Callsheet Schedule
+    description: FramePlan 通告表檔案
+    role: Editor
+    # 不特別指定 icon，讓 macOS 自動為文件類型合成預設圖示（白紙折角加上 App Logo）
