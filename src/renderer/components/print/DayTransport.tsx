@@ -1,5 +1,5 @@
-import { PLACE_KIND_LABELS, VEHICLE_PURPOSE_LABELS } from '@shared/schema'
-import { listPeople, resolvePlace, runningVehicles, vehicleTypeName } from '@/lib/transport'
+import { VEHICLE_PURPOSE_LABELS } from '@shared/schema'
+import { listPeople, runningVehicles, vehicleTypeName } from '@/lib/transport'
 import { Section, dash } from './DayParts'
 import type { DayCtx } from './DayParts'
 
@@ -14,8 +14,8 @@ export function DayTransport({ doc, day }: DayCtx) {
       <div className="cs-vehicles">
         {vehicles.map((v) => {
           const s = day.vehicleSchedules[v.id]
-          const dest = resolvePlace(s.destination, s.destinationCustom, day, s)
-          const route = [s.pickupLocation.trim(), dest].filter(Boolean).join(' → ')
+          // 集合地點與目的地皆為使用者自填文字，直接列印
+          const route = [s.pickupLocation.trim(), s.destination.trim()].filter(Boolean).join(' → ')
           const meta: Array<[string, string]> = [
             ['出發', s.departureTime],
             ['轉場', s.transferTime],
@@ -68,16 +68,14 @@ export function DayTransport({ doc, day }: DayCtx) {
                     const p = people.get(pid)
                     if (!p) return null
                     const d = s.passengerDetails[pid]
-                    const place = (k: string | undefined, custom: string | undefined) =>
-                      k === 'custom' ? dash(custom) : k ? PLACE_KIND_LABELS[k as keyof typeof PLACE_KIND_LABELS].replace(/（.*）/, '') : '-'
                     return (
                       <tr key={pid}>
                         <td className="center">{i + 1}</td>
                         <td>{p.name}</td>
                         <td className="center">{p.kind === 'cast' ? '演員' : '工作人員'}</td>
                         <td className="center">{dash(d?.boardTime)}</td>
-                        <td>{place(d?.boardPlace, d?.boardCustom)}</td>
-                        <td>{place(d?.alightPlace, d?.alightCustom)}</td>
+                        <td>{dash(d?.boardPlace)}</td>
+                        <td>{dash(d?.alightPlace)}</td>
                         <td>{dash(d?.note)}</td>
                       </tr>
                     )

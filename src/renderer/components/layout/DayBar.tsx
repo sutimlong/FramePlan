@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { ArrowDownAZ, Copy, Plus, Trash2 } from 'lucide-react'
+import { confirmAction } from '@/lib/confirm'
 import { formatDateShort } from '@/lib/utils'
 import { useProjectStore } from '@/store/useProjectStore'
 
@@ -14,12 +15,16 @@ export function DayBar() {
   const current = days.find((d) => d.id === currentDayId) ?? days[0]
   const index = days.findIndex((d) => d.id === current.id)
 
-  const onRemove = () => {
+  const onRemove = async () => {
     if (days.length <= 1) return
     const label = `第 ${index + 1} 天（${formatDateShort(current.date)}）`
-    if (window.confirm(`確定刪除 ${label} 的通告表？此天的行程與出勤設定都會移除，演員與工作人員名單不受影響。`)) {
-      removeDay(current.id)
-    }
+    const ok = await confirmAction({
+      message: `確定刪除 ${label} 的通告表？`,
+      detail: '此天的行程與出勤設定都會移除，演員與工作人員名單不受影響。',
+      confirmLabel: '刪除',
+      danger: true,
+    })
+    if (ok) removeDay(current.id)
   }
 
   return (

@@ -11,7 +11,12 @@ import type {
 } from '@shared/schema'
 import { emptyRich, uid } from './utils'
 
-export const APP_VERSION = '1.1.0'
+/**
+ * 應用程式版本：由 vite.config.ts 的 define 於建置時注入，來源是 package.json 的 version，
+ * 因此與主程序 app.getVersion() 永遠一致（不會出現兩處各寫一份而不同步的情況）。
+ * typeof 判斷可讓程式在未經 Vite 處理的環境（例如單元測試）仍可載入。
+ */
+export const APP_VERSION: string = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0'
 
 export const DEFAULT_SAFETY_BANNER = [
   '未經製片許可，不得強迫加班或帶訪客',
@@ -59,9 +64,7 @@ export const defaultCrewCall = (): CrewCall => ({ working: true, callTime: '' })
 export const defaultPassengerDetail = (): PassengerDetail => ({
   boardTime: '',
   boardPlace: '',
-  boardCustom: '',
   alightPlace: '',
-  alightCustom: '',
   note: '',
 })
 
@@ -75,7 +78,6 @@ export const defaultVehicleSchedule = (): VehicleSchedule => ({
   arrivalTime: '',
   returnTime: '',
   destination: '',
-  destinationCustom: '',
   passengerIds: [],
   passengerDetails: {},
   passengersNote: '',
@@ -94,10 +96,10 @@ export function createEmptyDay(date: string = todayIso()): ShootDay {
     setMedic: '',
     scheduleVersion: '',
     locations: {
-      productionOffice: place('製片辦公室'),
+      productionOffice: place(''),
       nearestHospital: place('最近醫院'),
       parking: place('停車場'),
-      basecamp: place('基地營'),
+      basecamp: place(''),
       mainShootLocation: place('主拍攝地'),
       freeNotes: emptyRich(),
     },

@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react'
+import { confirmAction } from '@/lib/confirm'
 import { useProjectStore } from '@/store/useProjectStore'
 import { Card, NumberField, SelectField, TextField } from '../common/Fields'
 import { VEHICLE_TYPE_OPTIONS } from './transportOptions'
@@ -33,10 +34,14 @@ export function VehicleFleet() {
           <button
             className="icon-btn danger"
             title="刪除車輛（所有天的車表一併移除）"
-            onClick={() => {
-              if (window.confirm(`刪除「${v.number || '未編號'}」？所有天的車表都會一起移除。`)) {
-                st().removeVehicle(v.id)
-              }
+            onClick={async () => {
+              const ok = await confirmAction({
+                message: `刪除「${v.number || '未編號'}」？`,
+                detail: '所有天的車表都會一起移除。',
+                confirmLabel: '刪除',
+                danger: true,
+              })
+              if (ok) st().removeVehicle(v.id)
             }}
           >
             <Trash2 size={14} />

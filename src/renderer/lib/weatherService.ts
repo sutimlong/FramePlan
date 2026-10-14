@@ -1,10 +1,13 @@
-import type { WeatherCondition, WeatherInfo } from '@shared/schema'
+import { WEATHER_CONDITION_LABELS, type WeatherCondition, type WeatherInfo } from '@shared/schema'
 
 export interface WeatherFetchResult {
   weather: WeatherInfo
   locationName: string
   message: string
 }
+
+/** 溫度單位（與 WeatherInfo.tempUnit 同步） */
+type TempUnit = WeatherInfo['tempUnit']
 
 interface LocationCoord {
   name: string
@@ -80,10 +83,101 @@ export function mapWmoCode(code: number): { condition: WeatherCondition; label: 
     case 95:
     case 96:
     case 99:
-      return { condition: 'storm', label: '雷陣雨' }
+      // 標籤與 UI 選單、通告表列印共用同一份定義
+      return { condition: 'storm', label: WEATHER_CONDITION_LABELS.storm }
     default:
       return { condition: 'partly-cloudy', label: '多雲' }
   }
+}
+
+/** 天氣狀況的英文標籤（通告表預覽的天氣概況列使用） */
+export const CONDITION_LABELS_EN: Record<WeatherCondition, string> = {
+  sunny: 'Sunny',
+  'partly-cloudy': 'Partly Cloudy',
+  cloudy: 'Cloudy',
+  rain: 'Rain',
+  snow: 'Snow',
+  storm: 'Thunderstorms',
+  fog: 'Foggy',
+}
+
+/** 16 方位風向縮寫，索引 0 為北 */
+const COMPASS = [
+  'N',
+  'NNE',
+  'NE',
+  'ENE',
+  'E',
+  'ESE',
+  'SE',
+  'SSE',
+  'S',
+  'SSW',
+  'SW',
+  'WSW',
+  'W',
+  'WNW',
+  'NW',
+  'NNW',
+]
+
+const roundOrNull = (v: number | null | undefined): number | null =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : null
+
+/** 將攝氏溫度換算為指定單位（API 一律回傳攝氏） */
+const convertTemp = (celsius: number, unit: TempUnit): number =>
+  unit === 'F' ? Math.round((celsius * 9) / 5 + 32) : Math.round(celsius)
+
+/** 依使用者選擇的單位換算氣溫；null 代表沒有資料 */
+const toUnit = (celsius: number | null | undefined, unit: TempUnit): number | null =>
+  typeof celsius === 'number' && Number.isFinite(celsius) ? convertTemp(celsius, unit) : null
+
+/** 風向角度轉為方位縮寫（如 121° → ESE） */
+function toCompass(degrees: number | null | undefined): string {
+  if (typeof degrees !== 'number' || !Number.isFinite(degrees)) return ''
+  const normalized = ((degrees % 360) + 360) % 360
+  return COMPASS[Math.round(normalized / 22.5) % 16]
+}
+
+/** 以日照時數占白晝長度比例推估「日照機率」（%） */
+function toSunshineChance(
+  sunshineSeconds: number | null | undefined,
+  daylightSeconds: number | null | undefined,
+): number | null {
+  if (
+    typeof sunshineSeconds !== 'number' ||
+    typeof daylightSeconds !== 'number' ||
+    !Number.isFinite(sunshineSeconds) ||
+    !Number.isFinite(daylightSeconds) ||
+    daylightSeconds <= 0
+  ) {
+    return null
+  }
+  const ratio = (sunshineSeconds / daylightSeconds) * 100
+  return Math.max(0, Math.min(100, Math.round(ratio)))
+}
+
+/**
+ * 組出通告表天氣概況文字，格式與標準通告表一致：
+ * 「Sunny, 0% chances of rain, 98% chance of sunshine. Wind 5 ESE」
+ * 缺少的資料（例如歷史紀錄沒有降雨機率）會自動略過。
+ */
+export function buildWeatherSummary(p: {
+  condition: WeatherCondition
+  rainChance?: number | null
+  sunshineChance?: number | null
+  windSpeed?: number | null
+  windDir?: string
+}): string {
+  const segments: string[] = []
+  if (p.rainChance != null) segments.push(`${p.rainChance}% chances of rain`)
+  if (p.sunshineChance != null) segments.push(`${p.sunshineChance}% chance of sunshine`)
+
+  let text = CONDITION_LABELS_EN[p.condition] || CONDITION_LABELS_EN.sunny
+  if (segments.length > 0) text += `, ${segments.join(', ')}`
+  text += '.'
+  if (p.windSpeed != null && p.windDir) text += ` Wind ${p.windSpeed} ${p.windDir}`
+  return text
 }
 
 /** 依據地址或地名解析經緯度 */
@@ -146,11 +240,13 @@ function parseTimePart(isoOrTimeStr: string): string {
 }
 
 /**
- * 依據拍攝日期及拍攝地點，向天氣 API 查詢並回傳天氣資料
+ * 依據拍攝日期及拍攝地點，向天氣 API 查詢並回傳天氣資料。
+ * API 回傳的氣溫一律是攝氏，會依 `tempUnit` 換算成使用者選擇的單位後才回傳。
  */
 export async function fetchWeatherForDay(
   dateStr: string,
   locationAddress?: string,
+  tempUnit: TempUnit = 'C',
 ): Promise<WeatherFetchResult> {
   const dateTrimmed = dateStr?.trim()
   if (!dateTrimmed) {
@@ -171,7 +267,7 @@ export async function fetchWeatherForDay(
 
   // 情況 1：在 Open-Meteo 氣象預報有效範圍內 (-90 天到 +16 天)
   if (diffDays >= -90 && diffDays <= 16) {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coord.lat}&longitude=${coord.lng}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&timezone=auto&start_date=${dateTrimmed}&end_date=${dateTrimmed}`
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coord.lat}&longitude=${coord.lng}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,sunshine_duration,daylight_duration,wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${dateTrimmed}&end_date=${dateTrimmed}`
     const res = await fetch(url)
     if (!res.ok) {
       throw new Error(`無法取得天氣資訊 (${res.status})`)
@@ -184,23 +280,23 @@ export async function fetchWeatherForDay(
 
     const code = d.weather_code?.[0] ?? 0
     const { condition, label } = mapWmoCode(code)
-    const low = d.temperature_2m_min?.[0] != null ? Math.round(d.temperature_2m_min[0]) : null
-    const high = d.temperature_2m_max?.[0] != null ? Math.round(d.temperature_2m_max[0]) : null
+    const low = toUnit(d.temperature_2m_min?.[0], tempUnit)
+    const high = toUnit(d.temperature_2m_max?.[0], tempUnit)
     const sunrise = parseTimePart(d.sunrise?.[0] ?? '')
     const sunset = parseTimePart(d.sunset?.[0] ?? '')
     const precipProb = d.precipitation_probability_max?.[0]
 
-    let summary = `${coord.name}・${label}`
-    if (low != null && high != null) {
-      summary += `，氣溫約 ${low}°C ~ ${high}°C`
-    }
-    if (precipProb != null && precipProb > 0) {
-      summary += `，降雨機率 ${precipProb}%`
-    }
+    const summary = buildWeatherSummary({
+      condition,
+      rainChance: roundOrNull(precipProb),
+      sunshineChance: toSunshineChance(d.sunshine_duration?.[0], d.daylight_duration?.[0]),
+      windSpeed: roundOrNull(d.wind_speed_10m_max?.[0]),
+      windDir: toCompass(d.wind_direction_10m_dominant?.[0]),
+    })
 
     return {
       weather: {
-        tempUnit: 'C',
+        tempUnit,
         low,
         high,
         condition,
@@ -209,13 +305,13 @@ export async function fetchWeatherForDay(
         summary,
       },
       locationName: coord.name,
-      message: `已填入「${dateTrimmed}」${coord.name}氣象預報（${label}，${low}°C ~ ${high}°C）`,
+      message: `已填入「${dateTrimmed}」${coord.name}氣象預報（${label}，${low}°${tempUnit} ~ ${high}°${tempUnit}）`,
     }
   }
 
   // 情況 2：歷史日期（超過 90 天前）
   if (diffDays < -90) {
-    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${coord.lat}&longitude=${coord.lng}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&start_date=${dateTrimmed}&end_date=${dateTrimmed}`
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${coord.lat}&longitude=${coord.lng}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,sunshine_duration,daylight_duration,wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto&start_date=${dateTrimmed}&end_date=${dateTrimmed}`
     const res = await fetch(url)
     if (!res.ok) {
       throw new Error(`無法取得歷史天氣資訊 (${res.status})`)
@@ -223,17 +319,23 @@ export async function fetchWeatherForDay(
     const data = await res.json()
     const d = data.daily
     const code = d.weather_code?.[0] ?? 0
-    const { condition, label } = mapWmoCode(code)
-    const low = d.temperature_2m_min?.[0] != null ? Math.round(d.temperature_2m_min[0]) : null
-    const high = d.temperature_2m_max?.[0] != null ? Math.round(d.temperature_2m_max[0]) : null
+    const { condition } = mapWmoCode(code)
+    const low = toUnit(d.temperature_2m_min?.[0], tempUnit)
+    const high = toUnit(d.temperature_2m_max?.[0], tempUnit)
     const sunrise = parseTimePart(d.sunrise?.[0] ?? '')
     const sunset = parseTimePart(d.sunset?.[0] ?? '')
 
-    const summary = `${coord.name}・${label}，氣溫約 ${low}°C ~ ${high}°C`
+    // 歷史資料 API 未提供降雨機率，該段文字會自動省略
+    const summary = buildWeatherSummary({
+      condition,
+      sunshineChance: toSunshineChance(d.sunshine_duration?.[0], d.daylight_duration?.[0]),
+      windSpeed: roundOrNull(d.wind_speed_10m_max?.[0]),
+      windDir: toCompass(d.wind_direction_10m_dominant?.[0]),
+    })
 
     return {
       weather: {
-        tempUnit: 'C',
+        tempUnit,
         low,
         high,
         condition,
@@ -265,11 +367,10 @@ export async function fetchWeatherForDay(
     // 忽略
   }
 
-  // 嘗試查詢前一年同日的氣候紀錄作為參考
-  let low: number | null = null
-  let high: number | null = null
+  // 嘗試查詢前一年同日的氣候紀錄作為參考（API 回傳攝氏）
+  let lowC: number | null = null
+  let highC: number | null = null
   let condition: WeatherCondition = 'partly-cloudy'
-  let label = '多雲時晴'
 
   try {
     const [y, m, day] = dateTrimmed.split('-')
@@ -279,22 +380,26 @@ export async function fetchWeatherForDay(
     if (histRes.ok) {
       const histData = await histRes.json()
       if (histData.daily) {
-        low = histData.daily.temperature_2m_min?.[0] != null ? Math.round(histData.daily.temperature_2m_min[0]) : null
-        high = histData.daily.temperature_2m_max?.[0] != null ? Math.round(histData.daily.temperature_2m_max[0]) : null
-        const mapped = mapWmoCode(histData.daily.weather_code?.[0] ?? 2)
-        condition = mapped.condition
-        label = mapped.label
+        lowC = histData.daily.temperature_2m_min?.[0] != null ? Math.round(histData.daily.temperature_2m_min[0]) : null
+        highC = histData.daily.temperature_2m_max?.[0] != null ? Math.round(histData.daily.temperature_2m_max[0]) : null
+        condition = mapWmoCode(histData.daily.weather_code?.[0] ?? 2).condition
       }
     }
   } catch {
     // 忽略
   }
 
-  const summary = `（預估氣候）${coord.name}・${label}，氣溫約 ${low ?? 22}°C ~ ${high ?? 28}°C`
+  const low = toUnit(lowC, tempUnit)
+  const high = toUnit(highC, tempUnit)
+
+  // 情況 3 無即時觀測資料，僅能提供預估值，因此保留「預估氣候」提示
+  const summary = `${CONDITION_LABELS_EN[condition]}（預估氣候，氣溫約 ${
+    low ?? convertTemp(22, tempUnit)
+  } °${tempUnit} ~ ${high ?? convertTemp(28, tempUnit)} °${tempUnit}）`
 
   return {
     weather: {
-      tempUnit: 'C',
+      tempUnit,
       low,
       high,
       condition,

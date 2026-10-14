@@ -1,11 +1,8 @@
 import {
-  PLACE_KIND_LABELS,
   VEHICLE_TYPE_LABELS,
-  type PlaceKind,
   type SchedDocument,
   type ShootDay,
   type Vehicle,
-  type VehicleSchedule,
 } from '@shared/schema'
 
 export interface Person {
@@ -45,30 +42,6 @@ export function listPeople(doc: SchedDocument, day: ShootDay): Person[] {
 export const vehicleTypeName = (v: Vehicle): string =>
   v.type === 'custom' ? v.typeLabel || '自訂' : VEHICLE_TYPE_LABELS[v.type]
 
-/** 把地點類型轉成可閱讀文字（含地址），例如「基地營：台北市…」 */
-export function resolvePlace(kind: PlaceKind, custom: string, day: ShootDay, sched: VehicleSchedule): string {
-  const L = day.locations
-  const withAddr = (label: string, addr: string) => (addr.trim() ? `${label}：${addr.trim()}` : label)
-  switch (kind) {
-    case '':
-      return ''
-    case 'pickup':
-      return sched.pickupLocation.trim() || PLACE_KIND_LABELS.pickup
-    case 'office':
-      return withAddr(PLACE_KIND_LABELS.office, L.productionOffice.address)
-    case 'basecamp':
-      return withAddr(PLACE_KIND_LABELS.basecamp, L.basecamp.address)
-    case 'main':
-      return withAddr(PLACE_KIND_LABELS.main, L.mainShootLocation.address)
-    case 'parking':
-      return withAddr(PLACE_KIND_LABELS.parking, L.parking.address)
-    case 'hospital':
-      return withAddr(PLACE_KIND_LABELS.hospital, L.nearestHospital.address)
-    case 'custom':
-      return custom.trim()
-  }
-}
-
 /** 當天有出車的車輛（依車輛清單順序） */
 export const runningVehicles = (doc: SchedDocument, day: ShootDay): Vehicle[] =>
   doc.vehicles.filter((v) => day.vehicleSchedules[v.id]?.running)
@@ -88,10 +61,13 @@ export function checkTransport(doc: SchedDocument, day: ShootDay): TransportIssu
     const label = `${v.number || '未編號'} 車`
     if (!v.driverName.trim()) issues.push({ vehicleId: v.id, message: `${label}尚未填寫司機` })
     if (!s.departureTime) issues.push({ vehicleId: v.id, message: `${label}尚未填寫出發時間` })
-    if (v.seats && s.passengerIds.length > v.seats) {
-      issues.push({ vehicleId: v.id, message: `${label}超載：${s.passengerIds.length} 人 / ${v.seats} 座` })
+    // 先對乘客去重：同一台車若重複列出同一位乘客，不應被算成超載，
+    // 也不應被誤判為「同時被排在 X 車與 X 車」。
+    const passengers = [...new Set(s.passengerIds)]
+    if (v.seats && passengers.length > v.seats) {
+      issues.push({ vehicleId: v.id, message: `${label}超載：${passengers.length} 人 / ${v.seats} 座` })
     }
-    for (const pid of s.passengerIds) {
+    for (const pid of passengers) {
       const p = people.get(pid)
       if (!p) continue
       if (!p.working) issues.push({ vehicleId: v.id, message: `${label}：${p.name} 本日不出勤` })

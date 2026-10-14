@@ -1,4 +1,6 @@
-@page { size: 297mm 210mm; margin: 5mm; }
+/* 下緣留白（8mm）需大於 PDF 頁碼文字高度，讓每頁下方的「第 X 頁，共 Y 頁」有空間；
+   數值需與 src/main/ipc/pdf.ts 的 BOTTOM_MARGIN_INCH 一致。 */
+@page { size: 297mm 210mm; margin: 5mm 5mm 8mm; }
 
 .print-root { color: #000; font-size: 9.5pt; }
 .cs-page { 
@@ -19,8 +21,8 @@
 .cs-title h1 { margin: 0; font-size: 20pt; font-weight: 500; }
 .cs-title p { margin: 1mm 0 0; font-size: 11pt; }
 .cs-circle { width: 30mm; height: 30mm; border: 1.2mm solid #000; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; }
-.cs-circle span { font-size: 7pt; }
-.cs-circle strong { font-size: 20pt; font-weight: 400; color: #444; }
+.cs-circle span { font-size: 9pt; color: #000; }
+.cs-circle strong { font-size: 22pt; font-weight: 700; line-height: 1.05; color: #333; }
 .cs-date { text-align: right; }
 .cs-date p { margin: 0; font-size: 12pt; }
 .cs-date h2 { margin: 1mm 0 0; font-size: 18pt; font-weight: 500; }
@@ -35,15 +37,22 @@
 .cs-place.wide { grid-column: span 2; border-right: 0; border-bottom: 0; border-top: 2px solid #000; }
 .cs-place h3 { margin: 0 0 1mm; font-size: 10.5pt; text-align: center; text-decoration: underline; }
 .cs-place p { margin: 0; text-align: center; }
+/* 備註為行內 <small>，需改為區塊並置中，才會與地址一樣置中 */
+.cs-place small { display: block; margin: 0; text-align: center; }
 .cs-pin { position: absolute; left: 50%; top: 14mm; transform: translateX(-50%); background: #fff; }
+/* 天氣區塊版型：低溫 + 天氣圖示 + 高溫同列，下面接概況與日出日落（對應通告表標準天氣欄位） */
 .cs-weather { text-align: center; display: flex; flex-direction: column; justify-content: flex-start; }
-.cs-weather h3 { margin: 0 0 2mm; font-size: 10.5pt; text-align: center; text-decoration: underline; }
-.cs-weather .temps { display: flex; justify-content: space-around; align-items: center; margin-bottom: 1.5mm; }
-.cs-weather b { font-size: 13pt; font-weight: 600; display: block; }
-.cs-weather small { font-size: 8pt; color: #555; }
-.cs-weather .cond-badge { font-size: 11pt; font-weight: 500; }
-.cs-weather p.summary { margin: 1mm 0 2mm; font-size: 8.5pt; color: #222; line-height: 1.35; }
-.cs-weather .sun { margin: 2mm 0 0; font-size: 8.5pt; }
+.cs-weather h3 { margin: 0 0 1.5mm; font-size: 10.5pt; text-align: center; text-decoration: underline; }
+.cs-weather .temps { display: flex; justify-content: space-around; align-items: flex-start; margin-bottom: 1mm; }
+.cs-weather .temp { display: flex; flex-direction: column; align-items: center; }
+.cs-weather .temp b { font-size: 15pt; font-weight: 600; line-height: 1.1; white-space: nowrap; }
+.cs-weather .temp small { font-size: 7.5pt; color: #444; margin-top: 0.5mm; }
+.cs-weather .cond-icon { margin-top: 1mm; }
+.cs-weather p.summary { margin: 1.5mm 0; font-size: 8.5pt; color: #222; line-height: 1.35; }
+.cs-weather p.sun { margin: 0; font-size: 15pt; font-weight: 600; line-height: 1.15; display: flex; flex-direction: column; align-items: center; gap: 1mm; }
+.cs-weather p.sun span { display: inline-flex; align-items: center; gap: 1.2mm; white-space: nowrap; }
+/* 日出／日落圖示固定尺寸，避免 flex 壓縮變形 */
+.cs-weather p.sun .sun-icon { flex: none; }
 
 .cs-banner { text-align: center; font-size: 7.5pt; text-transform: uppercase; padding: 1mm 0 3mm; }
 
@@ -68,13 +77,14 @@
 .cs-table.cs-sched { table-layout: fixed; }
 .cs-table.cs-sched col.c-time { width: 6%; }
 .cs-table.cs-sched col.c-scene { width: 5%; }
-.cs-table.cs-sched col.c-sb { width: 30%; }
-.cs-table.cs-sched col.c-desc { width: 20%; }
-.cs-table.cs-sched col.c-cast { width: 12%; }
+.cs-table.cs-sched col.c-shot { width: 6%; }
+.cs-table.cs-sched col.c-cam { width: 10%; }
+.cs-table.cs-sched col.c-sb { width: 24%; }
+.cs-table.cs-sched col.c-desc { width: 18%; }
+.cs-table.cs-sched col.c-cast { width: 10%; }
 .cs-table.cs-sched col.c-extras { width: 8%; }
 .cs-table.cs-sched col.c-dn { width: 5%; }
-.cs-table.cs-sched col.c-pages { width: 5%; }
-.cs-table.cs-sched col.c-loc { width: 9%; }
+.cs-table.cs-sched col.c-loc { width: 8%; }
 
 /* 分鏡欄位：顯示於「場次」與「場景/內容」之間 */
 .cs-table td.sb-cell { text-align: center; vertical-align: middle; }
@@ -96,7 +106,17 @@
 .cs-bar { margin: 0; background: #000; color: #fff; padding: 1.5mm 3mm; font-size: 9.5pt; font-weight: 600; }
 .cs-bar.outline { background: #fff; color: #000; border-bottom: 1px solid #000; font-size: 12pt; font-weight: 400; }
 .cs-extras, .cs-dnotes { border: 0.5mm solid #000; }
+/* 只顯示其中一個區塊時，讓它佔滿整列（.cs-bottom 為雙欄 grid） */
+.cs-bottom .cs-extras:only-child,
+.cs-bottom .cs-dnotes:only-child { grid-column: 1 / -1; }
 .cs-extras p, .cs-dnotes p, .cs-dnotes > div { margin: 0; padding: 1.5mm 3mm; }
+/* 部門備註：組別粗體 +「：」+ 該組備註同段顯示（備註不另起一行）。
+   .rich 為 flex 子項並可縮到 0，長備註會在自身上下斷行、續行對齊在備註起始位置 */
+.cs-dnotes > div { display: flex; align-items: baseline; }
+.cs-dnotes > div > b { flex: none; white-space: nowrap; }
+.cs-dnotes > div > .rich { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+/* 覆寫上方 .cs-dnotes p 的 padding，否則備註段落會被推離組別名稱 */
+.cs-dnotes > div .rich p, .cs-dnotes > div .rich h4 { padding: 0; }
 .cs-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 4mm; }
 .cs-box { border: 0.5mm solid #000; border-top: 0; padding: 3mm; min-height: 14mm; margin-bottom: 0; }
 .cs-box p { margin: 0 0 1mm; }

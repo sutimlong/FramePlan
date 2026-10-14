@@ -6,6 +6,8 @@ import type { RundownItem } from '@shared/schema'
 import { useProjectStore as useSchedStore } from '@/store/useProjectStore'
 import { SelectField, TextField, TimeField } from '../common/Fields'
 import { SlateEditor } from '../editor/SlateEditor'
+import { CAMERA_MOVEMENT_GROUPS } from './cameraMovementOptions'
+import { StoryboardPicker } from './StoryboardPicker'
 
 const INT_EXT = [
   { value: 'INT', label: '內景' },
@@ -87,10 +89,19 @@ export function RundownRow({ item }: { item: RundownItem }) {
       <div className="scene-body">
         <div className="scene-top">
           <TimeField label="時間" compact value={item.time} onChange={(v) => update(item.id, { time: v })} />
+          <TimeField label="結束" compact value={item.endTime ?? ''} onChange={(v) => update(item.id, { endTime: v })} />
           <TextField label="場次" className="w-sm" value={item.sceneNumber} onChange={(v) => update(item.id, { sceneNumber: v })} />
+          <TextField label="鏡號" className="w-sm" value={item.shotNumber} onChange={(v) => update(item.id, { shotNumber: v })} />
+          <SelectField
+            label="鏡頭運動"
+            className="w-lg"
+            value={item.cameraMovement}
+            placeholder="-"
+            groups={CAMERA_MOVEMENT_GROUPS}
+            onChange={(v) => update(item.id, { cameraMovement: v })}
+          />
           <SelectField label="內/外景" value={item.intExt} options={INT_EXT} onChange={(v) => update(item.id, { intExt: v })} />
           <SelectField label="日/夜" value={item.dayNight} options={DAY_NIGHT} onChange={(v) => update(item.id, { dayNight: v })} />
-          <TextField label="頁數" className="w-sm" placeholder="1 3/8" value={item.pages} onChange={(v) => update(item.id, { pages: v })} />
           <TextField label="場景 (Set)" value={item.setName} onChange={(v) => update(item.id, { setName: v })} />
           <TextField label="地點" value={item.location} onChange={(v) => update(item.id, { location: v })} />
           <TextField label="臨演" className="w-md" value={item.extrasNote} onChange={(v) => update(item.id, { extrasNote: v })} />
@@ -117,6 +128,10 @@ export function RundownRow({ item }: { item: RundownItem }) {
             </button>
           ))}
         </div>
+        <StoryboardPicker
+          assetIds={item.storyboardAssetIds}
+          onChange={(ids) => update(item.id, { storyboardAssetIds: ids })}
+        />
       </div>
       <button className="icon-btn danger" onClick={() => remove(item.id)} aria-label="刪除">
         <Trash2 size={15} />

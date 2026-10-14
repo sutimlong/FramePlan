@@ -3,11 +3,27 @@
 .rundown-row.break { align-items: flex-end; background: #f3f1ea; }
 .drag-handle { border: 0; background: transparent; cursor: grab; color: var(--muted); padding: 4px 0; touch-action: none; }
 .scene-body { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.scene-top { display: flex; gap: 8px; flex-wrap: wrap; }
-.scene-top .field { min-width: 90px; }
+/* 行程表每場的欄位列：固定單列不換行，空間不足時各欄等比壓縮，
+   避免「臨演」被擠到第二行（改為 nowrap 後不再產生換行）。 */
+.scene-top { display: flex; gap: 8px; flex-wrap: nowrap; }
+/* 未指定寬度的欄位（內/外景、日/夜、場景、地點）平均分配剩餘空間 */
+.scene-top .field { flex: 1 1 90px; min-width: 48px; }
+/* 指定寬度的欄位保留原本基準寬，空間不足時可壓縮（flex-shrink: 1） */
+.scene-top .field.compact { flex: 0 1 110px; width: auto; }
+.scene-top .field.w-sm { flex: 0 1 70px; width: auto; }
+.scene-top .field.w-md { flex: 0 1 130px; width: auto; }
+.scene-top .field.w-lg { flex: 0 1 160px; width: auto; }
 .cast-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 2px 10px; cursor: pointer; font-size: 12px; }
 .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.storyboard { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; border-top: 1px dashed var(--line); }
+.storyboard-head { display: flex; align-items: center; gap: 6px; }
+.storyboard-head .field-label { flex: none; }
+.storyboard-thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.storyboard-thumb { position: relative; }
+.storyboard-thumb img { width: 72px; height: 48px; object-fit: cover; border: 1px solid var(--line); border-radius: 6px; display: block; }
+.storyboard-thumb .icon-btn { position: absolute; top: 2px; right: 2px; background: rgba(255,255,255,.85); padding: 2px; border-radius: 4px; }
 
 .person-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .person-head { display: flex; gap: 10px; align-items: flex-end; }
@@ -30,6 +46,9 @@
 .slate-editable ul, .slate-editable ol { margin: 0 0 4px; padding-left: 20px; }
 .slate-box.compact .slate-editable { padding: 6px 8px; }
 mark { background: #fff3a3; }
+
+/* 本日資訊「地點」：主拍攝地的地點備註（富文字編輯器） */
+.place-notes { display: flex; flex-direction: column; gap: 4px; }
 
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: grid; place-items: center; z-index: 50; }
 .modal { background: #fff; border-radius: 12px; width: 460px; overflow: hidden; }

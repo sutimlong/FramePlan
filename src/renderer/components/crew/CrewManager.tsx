@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
+import { confirmAction } from '@/lib/confirm'
 import { defaultCrewCall } from '@/lib/defaults'
 import { useCurrentDay, useProjectStore } from '@/store/useProjectStore'
 import { Card, TextField, TimeField } from '../common/Fields'
@@ -48,10 +49,14 @@ export function CrewManager() {
                 <button
                   className="icon-btn danger"
                   title="刪除部門"
-                  onClick={() => {
-                    if (window.confirm(`刪除「${dep.name}」及其 ${members.length} 位人員？所有天的紀錄都會移除。`)) {
-                      st().removeDepartment(dep.id)
-                    }
+                  onClick={async () => {
+                    const ok = await confirmAction({
+                      message: `刪除「${dep.name}」及其 ${members.length} 位人員？`,
+                      detail: '所有天的紀錄都會移除。',
+                      confirmLabel: '刪除',
+                      danger: true,
+                    })
+                    if (ok) st().removeDepartment(dep.id)
                   }}
                 >
                   <Trash2 size={14} />

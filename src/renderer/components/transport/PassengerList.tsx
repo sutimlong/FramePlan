@@ -27,7 +27,7 @@ export function PassengerList({ vehicle: v, sched, people, seatInfo }: Props) {
   const setDetail = (pid: string, p: Partial<PassengerDetail>) =>
     set({ passengerDetails: { ...sched.passengerDetails, [pid]: { ...detailOf(pid), ...p } } })
 
-  /** 一次加入多位乘客，預設帶入出發時間、集合地點與目的地 */
+  /** 一次加入多位乘客，預設帶入出發時間與該車的集合地點、目的地 */
   const addPassengers = (ids: string[]) => {
     const fresh = ids.filter((id) => !sched.passengerIds.includes(id))
     if (fresh.length === 0) return
@@ -36,9 +36,8 @@ export function PassengerList({ vehicle: v, sched, people, seatInfo }: Props) {
       details[id] = {
         ...defaultPassengerDetail(),
         boardTime: sched.departureTime,
-        boardPlace: sched.pickupLocation.trim() ? 'pickup' : '',
-        alightPlace: sched.destination,
-        alightCustom: sched.destination === 'custom' ? sched.destinationCustom : '',
+        boardPlace: sched.pickupLocation.trim(),
+        alightPlace: sched.destination.trim(),
       }
     }
     set({ passengerIds: [...sched.passengerIds, ...fresh], passengerDetails: details })

@@ -13,10 +13,21 @@ function ensureSchedExt(p: string): string {
   return path.extname(p).toLowerCase() === EXT ? p : p + EXT
 }
 
+/**
+ * 以「先寫暫存檔、再更名」的方式寫入，避免寫到一半中斷而損毀原檔。
+ * Windows 的 rename 無法覆蓋既有檔案，因此需要先刪除目標（此步驟非原子，
+ * 但可避免因檔案已存在而直接失敗）；任何失敗都會清掉暫存檔。
+ */
 async function atomicWrite(filePath: string, content: string): Promise<void> {
   const tmp = `${filePath}.${process.pid}.tmp`
-  await fs.writeFile(tmp, content, 'utf8')
-  await fs.rename(tmp, filePath)
+  try {
+    await fs.writeFile(tmp, content, 'utf8')
+    if (process.platform === 'win32') await fs.rm(filePath, { force: true })
+    await fs.rename(tmp, filePath)
+  } catch (e) {
+    await fs.rm(tmp, { force: true }).catch(() => {})
+    throw e
+  }
 }
 
 function sanitizeName(name: unknown): string {

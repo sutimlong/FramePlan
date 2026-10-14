@@ -23,32 +23,6 @@ export function richToPlain(nodes: RichText): string {
 
 export const isRichEmpty = (nodes: RichText): boolean => richToPlain(nodes).trim() === ''
 
-/** 解析頁數字串（八分制），例："1 3/8" -> 1.375；"3/8" -> 0.375；"2" -> 2 */
-export function parsePages(s: string): number {
-  const t = s.trim()
-  if (!t) return 0
-  const m = t.match(/^(?:(\d+)\s+)?(\d+)\/(\d+)$/)
-  if (m) {
-    const whole = m[1] ? parseInt(m[1], 10) : 0
-    const den = parseInt(m[3], 10)
-    return den === 0 ? whole : whole + parseInt(m[2], 10) / den
-  }
-  const n = parseFloat(t)
-  return Number.isFinite(n) ? n : 0
-}
-
-/** 將數值轉為八分制字串 */
-export function formatPages(v: number): string {
-  if (v <= 0) return '0'
-  const eighths = Math.round(v * 8)
-  const whole = Math.floor(eighths / 8)
-  const rem = eighths % 8
-  if (rem === 0) return String(whole)
-  const g = rem % 4 === 0 ? 4 : rem % 2 === 0 ? 2 : 1
-  const frac = `${rem / g}/${8 / g}`
-  return whole > 0 ? `${whole} ${frac}` : frac
-}
-
 /** "YYYY-MM-DD" -> "2025年3月22日 星期六" */
 export function formatDateZh(iso: string): string {
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/)
@@ -84,10 +58,3 @@ export function omitKey<T>(rec: Record<string, T>, key: string): Record<string, 
 }
 
 export const cx = (...a: Array<string | false | null | undefined>): string => a.filter(Boolean).join(' ')
-
-export function addMinutes(time: string, mins: number): string {
-  const m = time.match(/^(\d{2}):(\d{2})$/)
-  if (!m) return ''
-  const total = (parseInt(m[1], 10) * 60 + parseInt(m[2], 10) + mins + 1440) % 1440
-  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
-}

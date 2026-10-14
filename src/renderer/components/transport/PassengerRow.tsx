@@ -1,8 +1,7 @@
 import { X } from 'lucide-react'
 import type { PassengerDetail } from '@shared/schema'
 import type { Person } from '@/lib/transport'
-import { SelectField, TextField, TimeField } from '../common/Fields'
-import { PLACE_OPTIONS } from './transportOptions'
+import { TextField, TimeField } from '../common/Fields'
 
 interface Props {
   index: number
@@ -12,7 +11,7 @@ interface Props {
   onRemove: () => void
 }
 
-/** 乘客一列：上車時間／上車地點／下車地點／備註，皆為選單或時間欄位 */
+/** 乘客一列：上車時間／上車地點／下車地點／備註，地點皆為自由填寫文字 */
 export function PassengerRow({ index, person, detail: d, onChange, onRemove }: Props) {
   return (
     <div className={`passenger-row ${person.working ? '' : 'warn'}`}>
@@ -27,14 +26,8 @@ export function PassengerRow({ index, person, detail: d, onChange, onRemove }: P
         </div>
       </div>
       <TimeField label="上車時間" compact value={d.boardTime} onChange={(x) => onChange({ boardTime: x })} />
-      <SelectField label="上車地點" value={d.boardPlace} options={PLACE_OPTIONS} onChange={(x) => onChange({ boardPlace: x })} />
-      {d.boardPlace === 'custom' && (
-        <TextField label="自訂上車地點" value={d.boardCustom} onChange={(x) => onChange({ boardCustom: x })} />
-      )}
-      <SelectField label="下車地點" value={d.alightPlace} options={PLACE_OPTIONS} onChange={(x) => onChange({ alightPlace: x })} />
-      {d.alightPlace === 'custom' && (
-        <TextField label="自訂下車地點" value={d.alightCustom} onChange={(x) => onChange({ alightCustom: x })} />
-      )}
+      <TextField label="上車地點" placeholder="例：飯店大廳" value={d.boardPlace} onChange={(x) => onChange({ boardPlace: x })} />
+      <TextField label="下車地點" placeholder="例：基地營" value={d.alightPlace} onChange={(x) => onChange({ alightPlace: x })} />
       <TextField label="備註" value={d.note} onChange={(x) => onChange({ note: x })} />
       <button className="icon-btn" title="移出乘車名單" onClick={onRemove}>
         <X size={14} />

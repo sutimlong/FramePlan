@@ -43,20 +43,6 @@ export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
   'custom': '其他／自訂',
 }
 
-/** 上下車地點類型：選單項目會連動當天通告的地點資訊 */
-export type PlaceKind = '' | 'pickup' | 'office' | 'basecamp' | 'main' | 'parking' | 'hospital' | 'custom'
-
-export const PLACE_KIND_LABELS: Record<PlaceKind, string> = {
-  '': '—',
-  'pickup': '集合地點（早餐點／飯店）',
-  'office': '製片辦公室',
-  'basecamp': '基地營',
-  'main': '主拍攝地',
-  'parking': '停車場',
-  'hospital': '最近醫院',
-  'custom': '自訂地點',
-}
-
 /** 出車任務 */
 export type VehiclePurpose = '' | 'talent-in' | 'crew-shuttle' | 'equipment' | 'transfer' | 'wrap' | 'errand' | 'other'
 
@@ -79,6 +65,20 @@ export type WeatherCondition =
   | 'snow'
   | 'storm'
   | 'fog'
+
+/**
+ * 天氣狀況的中文標籤。
+ * UI 選單、自動填入訊息與列印共用同一份定義，避免同一種天氣在不同地方出現不同名稱。
+ */
+export const WEATHER_CONDITION_LABELS: Record<WeatherCondition, string> = {
+  sunny: '晴天',
+  'partly-cloudy': '多雲時晴',
+  cloudy: '陰天',
+  rain: '下雨',
+  snow: '下雪',
+  storm: '暴風雨',
+  fog: '起霧',
+}
 
 export interface DocumentMeta {
   createdAt: string
@@ -134,14 +134,17 @@ export interface SceneItem {
   time: TimeString
   endTime?: TimeString
   sceneNumber: string
+  shotNumber: string
+  cameraMovement: string
   intExt: IntExt
   dayNight: DayNight
   setName: string
   description: RichText
   castIds: ID[]
   extrasNote: string
-  pages: string
   location: string
+  /** 分鏡圖片（參照 doc.assets 的 id） */
+  storyboardAssetIds: ID[]
 }
 
 export interface BreakItem {
@@ -224,10 +227,10 @@ export interface Vehicle {
 /** 乘客在「某一台車」的上下車資訊 */
 export interface PassengerDetail {
   boardTime: TimeString
-  boardPlace: PlaceKind
-  boardCustom: string
-  alightPlace: PlaceKind
-  alightCustom: string
+  /** 上車地點：自由填寫，原樣列印到車表 */
+  boardPlace: string
+  /** 下車地點：自由填寫，原樣列印到車表 */
+  alightPlace: string
   note: string
 }
 
@@ -240,8 +243,8 @@ export interface VehicleSchedule {
   transferTime: TimeString
   arrivalTime: TimeString
   returnTime: TimeString
-  destination: PlaceKind
-  destinationCustom: string
+  /** 目的地：自由填寫，原樣列印到車表 */
+  destination: string
   passengerIds: ID[]
   passengerDetails: Record<ID, PassengerDetail>
   passengersNote: string

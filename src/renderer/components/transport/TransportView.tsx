@@ -1,4 +1,5 @@
 import { CopyPlus, TriangleAlert } from 'lucide-react'
+import { confirmAction } from '@/lib/confirm'
 import { defaultVehicleSchedule } from '@/lib/defaults'
 import { checkTransport, listPeople } from '@/lib/transport'
 import { useCurrentDay, useProjectStore } from '@/store/useProjectStore'
@@ -18,9 +19,16 @@ export function TransportView() {
   const prevDay = dayIndex > 0 ? doc.days[dayIndex - 1] : undefined
   const runningCount = vehicles.filter((v) => day.vehicleSchedules[v.id]?.running).length
 
-  const copyFromPrev = () => {
+  const copyFromPrev = async () => {
     if (!prevDay) return
-    if (runningCount > 0 && !window.confirm('這會覆蓋本日已有的車表安排，確定從前一天複製？')) return
+    if (runningCount > 0) {
+      const ok = await confirmAction({
+        message: '這會覆蓋本日已有的車表安排，確定從前一天複製？',
+        confirmLabel: '複製',
+        danger: true,
+      })
+      if (!ok) return
+    }
     for (const v of vehicles) {
       const src = prevDay.vehicleSchedules[v.id]
       st().setVehicleSchedule(v.id, src ? structuredClone(src) : defaultVehicleSchedule())
@@ -31,6 +39,7 @@ export function TransportView() {
     <div className="view-grid">
       <p className="hint">
         車輛、車型與司機資料由所有天共用；每台車「本日是否出車、行程、乘車名單與上下車安排」只影響目前這一天，並會同步到通告表第二頁「工作人員通告」下方的「車表安排」。
+        集合地點、目的地與乘客上下車地點皆可自由填寫文字，會原樣列印到通告表（例如「玉成飯店大廳」「陽明山基地營」）。
       </p>
 
       <VehicleFleet />

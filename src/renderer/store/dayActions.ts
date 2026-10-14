@@ -62,14 +62,16 @@ export function createDayActions(
           kind: 'scene',
           time: '',
           sceneNumber: String(scenes.length + 1),
+          shotNumber: '',
+          cameraMovement: '',
           intExt: last?.intExt ?? 'INT',
           dayNight: last?.dayNight ?? 'D',
           setName: '',
           description: emptyRich(),
           castIds: [],
           extrasNote: '',
-          pages: '',
           location: last?.location ?? '',
+          storyboardAssetIds: [],
         }
         return { ...day, rundown: [...day.rundown, item] }
       }),

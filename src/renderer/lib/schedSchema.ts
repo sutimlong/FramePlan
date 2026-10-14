@@ -25,14 +25,16 @@ const scene = z.object({
   time,
   endTime: optStr,
   sceneNumber: str,
+  shotNumber: str,
+  cameraMovement: str,
   intExt: z.enum(['INT', 'EXT', 'INT/EXT']).catch('INT'),
   dayNight: z.enum(['D', 'N', 'DAWN', 'DUSK']).catch('D'),
   setName: str,
   description: rich,
   castIds: z.array(z.string()).catch([]),
   extrasNote: str,
-  pages: str,
   location: str,
+  storyboardAssetIds: z.array(z.string()).catch([]),
 })
 const brk = z.object({
   id,
@@ -54,7 +56,6 @@ const castCall = z.object({
 })
 const crewCall = z.object({ working: z.boolean().catch(true), callTime: time })
 
-const placeKind = z.enum(['', 'pickup', 'office', 'basecamp', 'main', 'parking', 'hospital', 'custom']).catch('')
 const vehicle = z.object({
   id,
   number: str,
@@ -70,31 +71,69 @@ const vehicle = z.object({
 })
 const passengerDetail = z.object({
   boardTime: time,
-  boardPlace: placeKind,
+  // 舊檔（v2 以前）為地點代碼（pickup／basecamp…）+ 自訂文字，於 vehicleSchedule 轉成自由文字
+  boardPlace: str,
   boardCustom: str,
-  alightPlace: placeKind,
+  alightPlace: str,
   alightCustom: str,
   note: str,
 })
-const vehicleSchedule = z.object({
-  // 舊檔案的既有車表視為「出車」
-  running: z.boolean().catch(true),
-  purpose: z.enum(['', 'talent-in', 'crew-shuttle', 'equipment', 'transfer', 'wrap', 'errand', 'other']).catch(''),
-  departureTime: time,
-  pickupLocation: str,
-  transferTime: time,
-  arrivalTime: time,
-  returnTime: time,
-  destination: placeKind,
-  destinationCustom: str,
-  passengerIds: z.array(z.string()).catch([]),
-  passengerDetails: z.record(z.string(), passengerDetail).catch({}),
-  passengersNote: str,
-  landmarks: str,
-  parking: str,
-  unloadingZone: str,
-  notes: str,
-})
+
+/** 舊檔的地點代碼 → 顯示文字（僅用於讀取舊檔） */
+const LEGACY_PLACE_LABELS: Record<string, string> = {
+  pickup: '集合地點（早餐點／飯店）',
+  office: '製片辦公室',
+  basecamp: '基地營',
+  main: '主拍攝地',
+  parking: '停車場',
+  hospital: '最近醫院',
+}
+
+/** 地點欄位一律自由填寫：舊檔的代碼轉成文字，已是自填文字則原樣保留 */
+function placeText(value: string, custom: string, pickup: string): string {
+  const text = value.trim()
+  if (!text) return ''
+  if (text === 'custom') return custom.trim()
+  const label = LEGACY_PLACE_LABELS[text]
+  if (!label) return text
+  return text === 'pickup' ? pickup.trim() || label : label
+}
+
+const vehicleSchedule = z
+  .object({
+    // 舊檔案的既有車表視為「出車」
+    running: z.boolean().catch(true),
+    purpose: z.enum(['', 'talent-in', 'crew-shuttle', 'equipment', 'transfer', 'wrap', 'errand', 'other']).catch(''),
+    departureTime: time,
+    pickupLocation: str,
+    transferTime: time,
+    arrivalTime: time,
+    returnTime: time,
+    destination: str,
+    destinationCustom: str,
+    passengerIds: z.array(z.string()).catch([]),
+    passengerDetails: z.record(z.string(), passengerDetail).catch({}),
+    passengersNote: str,
+    landmarks: str,
+    parking: str,
+    unloadingZone: str,
+    notes: str,
+  })
+  .transform(({ destination, destinationCustom, passengerDetails, ...rest }) => ({
+    ...rest,
+    destination: placeText(destination, destinationCustom, rest.pickupLocation),
+    passengerDetails: Object.fromEntries(
+      Object.entries(passengerDetails).map(([pid, d]) => [
+        pid,
+        {
+          boardTime: d.boardTime,
+          boardPlace: placeText(d.boardPlace, d.boardCustom, rest.pickupLocation),
+          alightPlace: placeText(d.alightPlace, d.alightCustom, rest.pickupLocation),
+          note: d.note,
+        },
+      ]),
+    ),
+  }))
 
 const day = z.object({
   id,

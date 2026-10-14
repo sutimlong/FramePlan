@@ -1,10 +1,10 @@
 import type { Vehicle, VehicleSchedule } from '@shared/schema'
 import { defaultVehicleSchedule } from '@/lib/defaults'
-import { resolvePlace, vehicleTypeName, type Person } from '@/lib/transport'
+import { vehicleTypeName, type Person } from '@/lib/transport'
 import { useCurrentDay, useProjectStore } from '@/store/useProjectStore'
 import { SelectField, TextField, TimeField } from '../common/Fields'
 import { PassengerList } from './PassengerList'
-import { PLACE_OPTIONS, PURPOSE_OPTIONS } from './transportOptions'
+import { PURPOSE_OPTIONS } from './transportOptions'
 
 /** 單一車輛在「目前這一天」的車表：是否出車、行程、乘客 */
 export function VehicleDayCard({ vehicle: v, people }: { vehicle: Vehicle; people: Person[] }) {
@@ -37,18 +37,15 @@ export function VehicleDayCard({ vehicle: v, people }: { vehicle: Vehicle; peopl
             <TimeField label="出發時間" value={sched.departureTime} onChange={(x) => set({ departureTime: x })} />
             <TimeField label="預定抵達下一個拍攝現場" value={sched.arrivalTime} onChange={(x) => set({ arrivalTime: x })} />
             <TextField label="集合地點（早餐點／飯店）" value={sched.pickupLocation} onChange={(x) => set({ pickupLocation: x })} />
-            <SelectField label="目的地" value={sched.destination} options={PLACE_OPTIONS} onChange={(x) => set({ destination: x })} />
-            {sched.destination === 'custom' ? (
-              <TextField label="自訂目的地" value={sched.destinationCustom} onChange={(x) => set({ destinationCustom: x })} />
-            ) : (
-              <span />
-            )}
+            <TextField
+              label="目的地"
+              placeholder="例：基地營、主拍攝地…"
+              value={sched.destination}
+              onChange={(x) => set({ destination: x })}
+            />
             <TimeField label="轉場時間" value={sched.transferTime} onChange={(x) => set({ transferTime: x })} />
             <TimeField label="預計返程／收車" value={sched.returnTime} onChange={(x) => set({ returnTime: x })} />
           </div>
-          {sched.destination && sched.destination !== 'custom' && (
-            <p className="muted">目的地：{resolvePlace(sched.destination, '', day, sched)}（取自本日通告表的地點）</p>
-          )}
 
           <PassengerList vehicle={v} sched={sched} people={people} seatInfo={seatInfo} />
 

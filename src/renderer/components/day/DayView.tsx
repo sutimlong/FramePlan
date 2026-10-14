@@ -1,28 +1,23 @@
 import { useState } from 'react'
 import { CloudSun, Loader2 } from 'lucide-react'
-import type { PlaceInfo, WeatherCondition } from '@shared/schema'
+import { WEATHER_CONDITION_LABELS, type PlaceInfo, type WeatherCondition } from '@shared/schema'
 import { selectCurrentDay, useCurrentDay, useProjectStore } from '@/store/useProjectStore'
 import { Card, DateField, NumberField, SelectField, TextField, TimeField } from '../common/Fields'
 import { SlateEditor } from '../editor/SlateEditor'
 import { fetchWeatherForDay } from '@/lib/weatherService'
 
-export const CONDITIONS: ReadonlyArray<{ value: WeatherCondition; label: string }> = [
-  { value: 'sunny', label: '晴天' },
-  { value: 'partly-cloudy', label: '多雲時晴' },
-  { value: 'cloudy', label: '陰天' },
-  { value: 'rain', label: '下雨' },
-  { value: 'snow', label: '下雪' },
-  { value: 'storm', label: '暴風雨' },
-  { value: 'fog', label: '起霧' },
-]
+/** 天氣狀況選項（標籤與自動填入訊息、列印共用 WEATHER_CONDITION_LABELS） */
+export const CONDITIONS: ReadonlyArray<{ value: WeatherCondition; label: string }> = (
+  ['sunny', 'partly-cloudy', 'cloudy', 'rain', 'snow', 'storm', 'fog'] as const
+).map((value) => ({ value, label: WEATHER_CONDITION_LABELS[value] }))
 
 type PlaceKey = 'productionOffice' | 'nearestHospital' | 'parking' | 'basecamp' | 'mainShootLocation'
 
 const PLACES: Array<{ key: PlaceKey; title: string }> = [
   { key: 'mainShootLocation', title: '主拍攝地' },
-  { key: 'productionOffice', title: '製片辦公室' },
-  { key: 'nearestHospital', title: '最近醫院' },
   { key: 'parking', title: '停車場' },
+  { key: 'nearestHospital', title: '最近醫院' },
+  { key: 'productionOffice', title: '劇組辦公室' },
   { key: 'basecamp', title: '基地營' },
 ]
 
@@ -57,7 +52,7 @@ export function DayView() {
         cur.locations.basecamp?.address ||
         cur.locations.productionOffice?.address ||
         ''
-      const res = await fetchWeatherForDay(cur.date, loc)
+      const res = await fetchWeatherForDay(cur.date, loc, cur.weather.tempUnit)
       useProjectStore.getState().patchDay((d) => ({
         ...d,
         weather: {
@@ -119,21 +114,37 @@ export function DayView() {
       </Card>
 
       <Card title="地點">
-        <div className="grid g2">
-          {PLACES.map(({ key, title }) => (
-            <div className="place" key={key}>
-              <h4>{title}</h4>
-              <TextField placeholder="地址" value={day.locations[key].address} onChange={(v) => setPlace(key, { address: v })} />
-              <TextField placeholder="備註" value={day.locations[key].notes ?? ''} onChange={(v) => setPlace(key, { notes: v })} />
+        <div className="place-block">
+          <span className="place-heading">主拍攝地點</span>
+          <div className="place-box">
+            <h4>{day.locations.mainShootLocation.label || '主拍攝地'}</h4>
+            <TextField placeholder="地址" value={day.locations.mainShootLocation.address} onChange={(v) => setPlace('mainShootLocation', { address: v })} />
+            <div className="place-notes">
+              <span className="field-label">地點備註</span>
+              <SlateEditor
+                value={day.locations.freeNotes}
+                onChange={(v) => setDay({ locations: { ...day.locations, freeNotes: v } })}
+                placeholder="停車、動線、注意事項…"
+                minHeight={56}
+              />
             </div>
-          ))}
+          </div>
         </div>
-        <h4 className="sub">地點備註</h4>
-        <SlateEditor
-          value={day.locations.freeNotes}
-          onChange={(v) => setDay({ locations: { ...day.locations, freeNotes: v } })}
-          placeholder="停車、動線、注意事項…"
-        />
+
+        <div className="place-block">
+          <span className="place-heading">停車場、醫院地點及其他地點資訊</span>
+          <div className="place-group">
+            <div className="grid g2">
+              {PLACES.filter((p) => p.key !== 'mainShootLocation').map(({ key, title }, i) => (
+                <div className="place-box" key={key}>
+                  <TextField label={`地點${i + 1}`} value={day.locations[key].label} placeholder={title} onChange={(v) => setPlace(key, { label: v })} />
+                  <TextField placeholder="地址" value={day.locations[key].address} onChange={(v) => setPlace(key, { address: v })} />
+                  <TextField placeholder="備註" value={day.locations[key].notes ?? ''} onChange={(v) => setPlace(key, { notes: v })} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </Card>
     </div>
   )

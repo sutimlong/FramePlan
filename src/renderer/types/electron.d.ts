@@ -1,4 +1,5 @@
 import type {
+  ConfirmOptions,
   OpenResult,
   PdfExportOptions,
   PdfResult,
@@ -12,11 +13,17 @@ export interface ElectronAPI {
   openSchedFile(): Promise<OpenResult>
   exportPdf(opts?: PdfExportOptions): Promise<PdfResult>
   getAppName(): Promise<string>
+  /** 以主程序原生對話框顯示確認訊息 */
+  confirm(opts: ConfirmOptions): Promise<boolean>
   onMenuNew(cb: () => void): () => void
   onMenuOpen(cb: () => void): () => void
   onMenuSave(cb: () => void): () => void
   onMenuSaveAs(cb: () => void): () => void
   onMenuExportPdf(cb: () => void): () => void
+  /** 主程序在關閉視窗前要求儲存變更 */
+  onRequestSaveBeforeClose(cb: () => void): () => void
+  /** 回報關閉前的儲存結果；true 表示已儲存，可以關閉 */
+  replySaveBeforeClose(saved: boolean): void
   setDirty(dirty: boolean): void
   setCurrentFile(path: string | null): void
 }

@@ -3,7 +3,6 @@ import type { DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { AnimatePresence } from 'framer-motion'
 import { Coffee, Film, Plus } from 'lucide-react'
-import { formatPages, parsePages } from '@/lib/utils'
 import { useCurrentDay, useProjectStore } from '@/store/useProjectStore'
 import { Card } from '../common/Fields'
 import { RundownRow } from './RundownRow'
@@ -27,7 +26,6 @@ export function RundownList() {
     if (from >= 0 && to >= 0) move(from, to)
   }
 
-  const totalPages = rundown.reduce((sum, r) => (r.kind === 'scene' ? sum + parsePages(r.pages) : sum), 0)
   const sceneCount = rundown.filter((r) => r.kind === 'scene').length
 
   return (
@@ -36,7 +34,7 @@ export function RundownList() {
       actions={
         <>
           <span className="muted">
-            {sceneCount} 場 · 共 {formatPages(totalPages)} 頁
+            {sceneCount} 場
           </span>
           <button className="btn small" onClick={addBreak}>
             <Coffee size={14} /> 新增換景/休息

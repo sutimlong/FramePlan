@@ -1,13 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import electron from 'vite-plugin-electron/simple'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 const r = (p: string) => path.resolve(import.meta.dirname, p)
 
+// 版本號的唯一來源：package.json（主程序 app.getVersion() 也讀同一個檔案）
+const pkg = JSON.parse(readFileSync(r('package.json'), 'utf8')) as { version: string }
+
 export default defineConfig({
   root: r('src/renderer'),
   base: './',
+  define: {
+    // 渲染端以 __APP_VERSION__ 取得版本（見 src/renderer/types/globals.d.ts）
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     react(),
     electron({

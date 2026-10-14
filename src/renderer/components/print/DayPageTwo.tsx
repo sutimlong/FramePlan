@@ -1,6 +1,6 @@
 import { richToPlain } from '@/lib/utils'
 import { DayTransport } from './DayTransport'
-import { Header, Section, dash } from './DayParts'
+import { Section, dash } from './DayParts'
 import type { DayCtx } from './DayParts'
 import { RichView } from './RichView'
 
@@ -14,9 +14,7 @@ export function DayPageTwo(ctx: DayCtx) {
 
   return (
     <div className="cs-page">
-      <Header {...ctx} />
-
-      <Section title="工作人員通告 Crew Call">
+      <Section title="工作人員通告 Crew Call" className="cs-crew-section">
         <table className="cs-table">
           <thead>
             <tr>

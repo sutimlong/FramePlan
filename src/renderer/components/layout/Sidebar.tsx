@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useProjectStore as useSchedStore } from '@/store/useProjectStore'
 import type { ViewKey } from '@/store/useProjectStore'
 import { getAppName } from '@/lib/appInfo'
+import { APP_VERSION } from '@/lib/defaults'
 import { cx } from '@/lib/utils'
 
 const ITEMS: Array<{ key: ViewKey; label: string; icon: ReactNode }> = [
@@ -34,6 +35,8 @@ export function Sidebar() {
         <Eye size={17} />
         通告表預覽
       </button>
+      {/* 版本號固定顯示在視窗左下角；來源與 package.json 的 version 同步 */}
+      <div className="app-version">版本 {APP_VERSION}</div>
     </nav>
   )
 }

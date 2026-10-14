@@ -12,7 +12,6 @@ import { NotesView } from './components/day/NotesView'
 import { RundownList } from './components/rundown/RundownList'
 import { CastList } from './components/cast/CastList'
 import { CastDayCalls } from './components/cast/CastDayCalls'
-import { ExtrasCard } from './components/cast/ExtrasCard'
 import { CrewManager } from './components/crew/CrewManager'
 import { TransportView } from './components/transport/TransportView'
 import { CallsheetPrintView } from './components/print/CallsheetPrintView'
@@ -22,7 +21,6 @@ function CastPage() {
     <div className="view-grid">
       <CastList />
       <CastDayCalls />
-      <ExtrasCard />
     </div>
   )
 }
@@ -83,11 +81,18 @@ export default function AppShell() {
     const api = window.electronAPI
     if (!api) return
     const offs = [
-      api.onMenuNew(newDocument),
+      api.onMenuNew(() => void newDocument()),
       api.onMenuOpen(() => void openFile()),
       api.onMenuSave(() => void saveFile(false)),
       api.onMenuSaveAs(() => void saveFile(true)),
       api.onMenuExportPdf(() => void exportPdf()),
+      // 主程序在關閉視窗前要求儲存：把存檔結果回報給主程序，決定是否關閉視窗
+      api.onRequestSaveBeforeClose(() => {
+        void (async () => {
+          const saved = await saveFile(false)
+          api.replySaveBeforeClose(saved)
+        })()
+      }),
     ]
     return () => offs.forEach((off) => off())
   }, [])

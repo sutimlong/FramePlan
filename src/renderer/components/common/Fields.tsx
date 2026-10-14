@@ -65,23 +65,61 @@ export function DateField({ label, value, onChange }: TimeProps) {
   )
 }
 
+export interface SelectOption<T extends string = string> {
+  value: T
+  label: string
+}
+
+export interface SelectGroup<T extends string = string> {
+  group: string
+  options: ReadonlyArray<SelectOption<T>>
+}
+
 interface SelectProps<T extends string> {
   label?: string
   value: T
-  options: ReadonlyArray<{ value: T; label: string }>
+  options?: ReadonlyArray<SelectOption<T>>
+  groups?: ReadonlyArray<SelectGroup<T>>
+  placeholder?: string
+  className?: string
   onChange: (v: T) => void
 }
 
-export function SelectField<T extends string>({ label, value, options, onChange }: SelectProps<T>) {
+export function SelectField<T extends string>({
+  label,
+  value,
+  options,
+  groups,
+  placeholder,
+  className,
+  onChange,
+}: SelectProps<T>) {
+  const isKnownValue =
+    options?.some((o) => o.value === value) ||
+    groups?.some((g) => g.options.some((o) => o.value === value))
+
   return (
-    <label className="field">
+    <label className={`field ${className ?? ''}`}>
       {label && <span className="field-label">{label}</span>}
       <select value={value} onChange={(e) => onChange(e.target.value as T)}>
-        {options.map((o) => (
+        {placeholder !== undefined && <option value="">{placeholder}</option>}
+        {options?.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
         ))}
+        {groups?.map((g) => (
+          <optgroup key={g.group} label={g.group}>
+            {g.options.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+        {value && !isKnownValue && (
+          <option value={value}>{value}</option>
+        )}
       </select>
     </label>
   )
