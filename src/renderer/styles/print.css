@@ -1,11 +1,11 @@
-@page { size: A4; margin: 0; }
+@page { size: 297mm 210mm; margin: 5mm; }
 
 .print-root { color: #000; font-size: 9.5pt; }
 .cs-page { 
   box-sizing: border-box;
-  width: 210mm; 
-  min-height: 297mm; 
-  padding: 10mm; 
+  width: 297mm; 
+  min-height: 210mm; 
+  padding: 5mm; 
   background: #fff; 
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
   margin-bottom: 30px;
@@ -47,16 +47,48 @@
 
 .cs-banner { text-align: center; font-size: 7.5pt; text-transform: uppercase; padding: 1mm 0 3mm; }
 
-.cs-section { border: 0.5mm solid #000; border-radius: 4mm; margin-bottom: 4mm; overflow: hidden; }
-.cs-section-title { margin: 0; padding: 1.5mm 4mm; font-size: 13pt; font-weight: 400; }
+/* 區塊外框：區塊本身若畫上／左／右框，跨頁時這三邊會被一路畫到頁面底部，在頁尾留下殘線。
+   改由「標題上框（保留上方圓角）」與內容（表格首/末欄、車表各車輛）撐出外框，
+   區塊本身只留下框與圓角，跨頁時就會收在內容結束的位置。 */
+.cs-section { border: 0; border-bottom: 0.5mm solid #000; border-radius: 4mm; margin-bottom: 4mm; overflow: hidden; }
+.cs-section-title { margin: 0; padding: 1.5mm 4mm; font-size: 13pt; font-weight: 400; border: 0.5mm solid #000; border-bottom: 0; border-radius: 4mm 4mm 0 0; }
 .cs-table { width: 100%; border-collapse: collapse; }
-.cs-table th { background: #000; color: #fff; padding: 1.5mm 2mm; font-size: 8.5pt; text-align: center; }
-.cs-table td { padding: 1.5mm 2mm; border: 1px solid #000; border-top: 0; vertical-align: top; }
+.cs-table th { background: #000; color: #fff; padding: 2mm 3mm; font-size: 9pt; text-align: center; }
+.cs-table td { padding: 2.5mm 3mm; border: 1px solid #000; border-top: 0; vertical-align: top; line-height: 1.6; }
 .cs-table tr { break-inside: avoid; page-break-inside: avoid; }
 .cs-table thead { display: table-header-group; }
 .cs-table tr.brk td { background: #eee; font-weight: 600; text-align: center; }
 .cs-table td:first-child { border-left: 0; }
 .cs-table td:last-child { border-right: 0; }
+/* 區塊本身不畫左右框，改由區塊內表格的首／末欄補回左右外框 */
+.cs-section > .cs-table td:first-child { border-left: 0.5mm solid #000; }
+.cs-section > .cs-table td:last-child { border-right: 0.5mm solid #000; }
+
+/* 行程表欄寬：分鏡：場景/內容 = 6:4 */
+.cs-table.cs-sched { table-layout: fixed; }
+.cs-table.cs-sched col.c-time { width: 6%; }
+.cs-table.cs-sched col.c-scene { width: 5%; }
+.cs-table.cs-sched col.c-sb { width: 30%; }
+.cs-table.cs-sched col.c-desc { width: 20%; }
+.cs-table.cs-sched col.c-cast { width: 12%; }
+.cs-table.cs-sched col.c-extras { width: 8%; }
+.cs-table.cs-sched col.c-dn { width: 5%; }
+.cs-table.cs-sched col.c-pages { width: 5%; }
+.cs-table.cs-sched col.c-loc { width: 9%; }
+
+/* 分鏡欄位：顯示於「場次」與「場景/內容」之間 */
+.cs-table td.sb-cell { text-align: center; vertical-align: middle; }
+.cs-table .sb-thumbs { display: flex; flex-wrap: wrap; gap: 1.5mm; align-items: flex-start; justify-content: flex-start; }
+.cs-table .sb-thumbs img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  border: 0.5px solid #000;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.cs-table .sb-empty { color: #999; }
+.cs-table .cast-list { list-style: none; margin: 0; padding: 0; }
 .center { text-align: center; }
 .it { font-style: italic; }
 
@@ -70,7 +102,7 @@
 .cs-box p { margin: 0 0 1mm; }
 /* 車表安排 */
 .cs-vehicles { display: flex; flex-direction: column; }
-.cs-vehicle { break-inside: avoid; page-break-inside: avoid; border-top: 1px solid #000; }
+.cs-vehicle { break-inside: avoid; page-break-inside: avoid; border-top: 1px solid #000; border-left: 0.5mm solid #000; border-right: 0.5mm solid #000; }
 .cs-vehicles .cs-vehicle:first-child { border-top: 0; }
 .cs-vehicle-head { display: flex; flex-wrap: wrap; gap: 1mm 4mm; align-items: baseline; padding: 1.5mm 3mm; background: #eee; font-size: 9pt; }
 .cs-vehicle-head b { font-size: 10pt; }
@@ -89,8 +121,8 @@
 @media print {
   html, body, #root { height: auto !important; background: #fff !important; overflow: visible !important; }
   .sidebar, .toolbar, .daybar, .preview-bar, .toast, .modal-backdrop { display: none !important; }
-  .app, .main, .content, .view, .preview-wrap { display: block !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; max-width: none !important; transform: none !important; }
-  .print-root { box-shadow: none; width: 210mm; margin: 0; }
-  .cs-page { margin: 0; box-shadow: none; }
+  .app, .main, .content, .view, .preview-wrap { display: block !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; max-width: none !important; background: #fff !important; transform: none !important; }
+  .print-root { box-shadow: none; width: 100%; margin: 0 auto; background: #fff !important; }
+  .cs-page { margin: 0; box-shadow: none; width: 100%; min-height: auto; padding: 0; background: #fff !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
