@@ -79,16 +79,16 @@ FramePlan 目前提供 **macOS（Apple Silicon / arm64）** 版本。請到 GitH
 
 👉 **[前往 Release 下載](https://github.com/sutimlong/FramePlan/releases)**
 
-在最新的 Release（目前為 `v1.2.0`）頁面中，你可以看到兩種安裝檔：
+在最新的 Release（目前為 `v1.2.1`）頁面中，你可以看到兩種安裝檔：
 
 | 檔案 | 說明 |
 | --- | --- |
-| `FramePlan-1.2.0-arm64.dmg` | **建議使用**。掛載後把 FramePlan 拖進「應用程式」資料夾即可。 |
-| `FramePlan-1.2.0-arm64.app.zip` | 免安裝壓縮檔，解壓後直接執行 `.app`。 |
+| `FramePlan-1.2.1-arm64.dmg` | **建議使用**。掛載後把 FramePlan 拖進「應用程式」資料夾即可。 |
+| `FramePlan-1.2.1-arm64.app.zip` | 免安裝壓縮檔，解壓後直接執行 `.app`。 |
 
 ### 安裝步驟（DMG）
 
-1. 下載 `FramePlan-1.2.0-arm64.dmg`。
+1. 下載 `FramePlan-1.2.1-arm64.dmg`。
 2. 雙擊開啟 DMG 映像檔。
 3. 將 `FramePlan` 圖示拖曳到「應用程式（Applications）」資料夾。
 4. 首次開啟時，若系統提示「無法驗證開發者」，請到「系統設定 → 隱私權與安全性」點選「**仍要打開**」。
