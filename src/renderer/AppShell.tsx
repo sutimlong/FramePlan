@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Printer } from 'lucide-react'
+import { Loader2, Printer } from 'lucide-react'
 import { useProjectStore } from '@/store/useProjectStore'
 import { exportPdf, newDocument, openFile, saveFile } from '@/lib/fileActions'
 import { Sidebar } from './components/layout/Sidebar'
@@ -106,7 +106,9 @@ export default function AppShell() {
   }, [filePath])
 
   useEffect(() => {
-    if (!toast) return
+    // 進行中提示（例如匯出 PDF 時的「QR code 製作中…」）不自動消失，
+    // 由流程結束時主動清除或由後續提示取代，避免還在 上傳／產生 QR 時提示就先不見。
+    if (!toast || toast.kind === 'progress') return
     const t = setTimeout(clearToast, 3500)
     return () => clearTimeout(t)
   }, [toast, clearToast])
@@ -144,6 +146,7 @@ export default function AppShell() {
             exit={{ opacity: 0, y: 12 }}
             onClick={clearToast}
           >
+            {toast.kind === 'progress' && <Loader2 size={13} className="spin" />}
             {toast.text}
           </motion.div>
         )}

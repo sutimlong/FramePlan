@@ -125,6 +125,16 @@ async function waitForQr(timeoutMs = 10_000): Promise<void> {
   }
 }
 
+/**
+ * 分享連結的來源說明：永久連結只寫服務名稱；臨時服務加上失效時間，
+ * 讓使用者知道印在紙上的 QR code 什麼時候會失效。
+ */
+function shareLinkNote(providerLabel: string, expiresAt: string): string {
+  const t = new Date(expiresAt)
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  return `${providerLabel}（連結有效至 ${t.getMonth() + 1}/${t.getDate()} ${pad(t.getHours())}:${pad(t.getMinutes())}）`
+}
+
 export async function exportPdf(): Promise<void> {
   const a = api()
   if (!a) return notAvailable()
@@ -136,14 +146,23 @@ export async function exportPdf(): Promise<void> {
   // 等預覽內容（含字型與分鏡圖片）真正就緒後再輸出，避免匯出空白或半成品的 PDF
   await waitForPrintAssets(await waitForPrintRoot())
 
-  // 第一次輸出：產生 PDF 並上傳到 Catbox，取得公開網址（不儲存檔案）
+  // 上傳與產生 QR code 需要數秒（失敗時還要依序試備援服務），先顯示不會自動消失的
+  // 進度提示，避免使用者以為按下匯出後沒有反應。
+  s.showToast('progress', 'QR code 製作中…')
+
+  // 第一次輸出：產生 PDF 並上傳到檔案代管服務，取得公開網址（不儲存檔案）
   let qrUrl: string | null = null
+  let qrNote = ''
   try {
     const up = await a.uploadPdf({ suggestedName: s.doc.project.projectName })
-    if (up.ok) qrUrl = up.url
-    else s.showToast('error', `上傳失敗：${up.error ?? '未知錯誤'}`)
+    if (up.ok) {
+      qrUrl = up.url
+      qrNote = up.expiresAt ? shareLinkNote(up.providerLabel, up.expiresAt) : `${up.providerLabel}（永久連結）`
+    } else {
+      s.showToast('error', `無法取得分享連結，將匯出不含 QR 的版本（${up.error ?? '未知錯誤'}）`)
+    }
   } catch (err) {
-    s.showToast('error', err instanceof Error ? err.message : '上傳失敗')
+    s.showToast('error', `無法取得分享連結，將匯出不含 QR 的版本（${err instanceof Error ? err.message : '未知錯誤'}）`)
   }
 
   // 以公開網址產生 QR code，並重新渲染預覽（尾頁插入 QR）
@@ -156,14 +175,18 @@ export async function exportPdf(): Promise<void> {
     } catch (err) {
       s.showToast('error', '產生 QR code 失敗，將匯出不含 QR 的版本')
       s.setShareQr(null)
+      qrNote = ''
     }
-  } else {
-    s.showToast('error', '無法取得分享連結，將匯出不含 QR 的版本')
   }
+
+  // QR code 產生結束（成功或失敗）：清掉進度提示，避免它留在畫面上蓋掉之後的匯出結果。
+  // 若上傳失敗，此時畫面上的已是錯誤提示，故只在仍為進度提示時才清除。
+  const afterQr = useSchedStore.getState()
+  if (afterQr.toast?.kind === 'progress') afterQr.clearToast()
 
   // 第二次輸出：此時畫面已含 QR 尾頁，進行存檔
   const res = await a.exportPdf({ suggestedName: s.doc.project.projectName })
-  if (res.ok) s.showToast('info', `已匯出 PDF：${res.filePath}`)
+  if (res.ok) s.showToast('info', `已匯出 PDF：${res.filePath}${qrNote ? `（含 QR：${qrNote}）` : ''}`)
   else if (!res.canceled) s.showToast('error', `匯出失敗：${res.error ?? '未知錯誤'}`)
   s.setShareQr(null)
   useSchedStore.getState().setView(prev === 'preview' ? 'preview' : prev)

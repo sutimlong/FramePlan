@@ -75,6 +75,8 @@ mark { background: #fff3a3; }
 
 .toast { position: fixed; right: 20px; bottom: 20px; background: #111; color: #fff; padding: 10px 16px; border-radius: 8px; cursor: pointer; max-width: 420px; z-index: 60; }
 .toast.error { background: var(--danger); }
+/* 進行中提示：加上轉圈圖示，以 flex 讓圖示與文字垂直置中（純文字提示沿用預設區塊排版） */
+.toast.progress { display: flex; align-items: center; gap: 8px; }
 
 .preview-wrap { display: flex; justify-content: center; padding-bottom: 30px; }
 

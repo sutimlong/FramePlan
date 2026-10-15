@@ -29,14 +29,19 @@ export interface ProjectState {
   dirty: boolean
   view: ViewKey
   printScope: PrintScope
-  toast: { kind: 'info' | 'error'; text: string } | null
+  /**
+   * 畫面右下角的提示。
+   * 'progress' 為進行中提示（例如匯出 PDF 時的「QR code 製作中…」），不會自動消失，
+   * 由流程結束時主動清除或由後續提示取代（見 AppShell 的自動清除邏輯）。
+   */
+  toast: { kind: 'info' | 'error' | 'progress'; text: string } | null
   /** 匯出 PDF 時自動產生的分享 QR code（data URL）；null 表示不顯示 QR 尾頁 */
   shareQr: string | null
 
   setView: (v: ViewKey) => void
   setPrintScope: (s: PrintScope) => void
   setShareQr: (dataUrl: string | null) => void
-  showToast: (kind: 'info' | 'error', text: string) => void
+  showToast: (kind: 'info' | 'error' | 'progress', text: string) => void
   clearToast: () => void
   setCurrentDay: (id: string) => void
   loadDocument: (doc: SchedDocument, filePath: string | null) => void
