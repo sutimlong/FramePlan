@@ -1,7 +1,7 @@
 {
   "name": "frameplan",
   "productName": "FramePlan",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "FramePlan：本地端電影／影視通告表（Callsheet）與 Rundown 製作工具",
   "private": true,
   "type": "module",
