@@ -28,6 +28,13 @@ const EMPTY_HEADER_TEMPLATE = '<div></div>'
 
 /** Catbox 檔案上傳 API（匿名上傳：不帶 userhash），成功時回傳公開網址純文字 */
 const CATBOX_UPLOAD_URL = 'https://catbox.moe/user/api.php'
+/** Litterbox：Catbox 的臨時空間，成功時回傳公開網址純文字，最多保留 72 小時 */
+const LITTERBOX_UPLOAD_URL = 'https://litterbox.catbox.moe/resources/internals/api.php'
+/** temp.sh：臨時空間，成功時回傳下載頁網址純文字，保留 3 天 */
+const TEMP_SH_UPLOAD_URL = 'https://temp.sh/upload'
+/** 單一上傳服務的逾時（毫秒）：服務無回應時不可卡住整個匯出流程 */
+const UPLOAD_TIMEOUT_MS = 20_000
+const HOUR_MS = 3_600_000
 
 /**
  * 以目前的列印樣式（print.css）將預覽畫面輸出成 PDF 位元組。
@@ -52,18 +59,97 @@ async function renderPdfBuffer(win: BrowserWindow): Promise<Buffer> {
   })
 }
 
-/** 將 PDF 位元組上傳到 Catbox，回傳公開網址 */
-async function uploadToCatbox(buf: Buffer, filename: string): Promise<string> {
+/** 上傳服務鏈的成員：`expiresInMs` 為 null 表示連結永久有效 */
+interface UploadProvider {
+  label: string
+  expiresInMs: number | null
+  upload: (buf: Buffer, filename: string) => Promise<string>
+}
+
+/** PDF 上傳用的 multipart 表單（各服務的檔案欄位名稱不同，故以參數指定） */
+function pdfForm(field: string, buf: Buffer, filename: string): FormData {
   const form = new FormData()
-  form.append('reqtype', 'fileupload')
   // Buffer 需複製成獨立 Uint8Array（ArrayBuffer），才能作為 Blob 內容
-  form.append('fileToUpload', new Blob([new Uint8Array(buf)], { type: 'application/pdf' }), filename)
-  const res = await fetch(CATBOX_UPLOAD_URL, { method: 'POST', body: form })
-  const text = (await res.text()).trim()
-  if (!res.ok || !/^https?:\/\//.test(text)) {
-    throw new Error(text || `上傳失敗（HTTP ${res.status}）`)
+  form.append(field, new Blob([new Uint8Array(buf)], { type: 'application/pdf' }), filename)
+  return form
+}
+
+/**
+ * 解析上傳服務的純文字回應：成功時服務會直接回傳公開網址；
+ * 若為 HTML 錯誤頁或服務錯誤訊息則視為失敗，並帶回原因供使用者判斷。
+ */
+function parseUploadUrl(text: string, status: number): string {
+  const body = text.trim()
+  if (/^https?:\/\/\S+$/.test(body)) return body
+  if (!body || body.startsWith('<')) throw new Error(`HTTP ${status}`)
+  throw new Error(body.slice(0, 80))
+}
+
+/** Catbox：匿名上傳，連結永久有效 */
+async function uploadToCatbox(buf: Buffer, filename: string): Promise<string> {
+  const form = pdfForm('fileToUpload', buf, filename)
+  form.append('reqtype', 'fileupload')
+  const res = await fetch(CATBOX_UPLOAD_URL, {
+    method: 'POST',
+    body: form,
+    signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
+  })
+  return parseUploadUrl(await res.text(), res.status)
+}
+
+/** Litterbox（Catbox 的臨時空間）：保留 72 小時 */
+async function uploadToLitterbox(buf: Buffer, filename: string): Promise<string> {
+  const form = pdfForm('fileToUpload', buf, filename)
+  form.append('reqtype', 'fileupload')
+  form.append('time', '72h')
+  const res = await fetch(LITTERBOX_UPLOAD_URL, {
+    method: 'POST',
+    body: form,
+    signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
+  })
+  return parseUploadUrl(await res.text(), res.status)
+}
+
+/** temp.sh：保留 3 天；回傳的是下載頁網址（掃描後需再點一次下載） */
+async function uploadToTempSh(buf: Buffer, filename: string): Promise<string> {
+  const form = pdfForm('file', buf, filename)
+  const res = await fetch(TEMP_SH_UPLOAD_URL, {
+    method: 'POST',
+    body: form,
+    signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
+  })
+  return parseUploadUrl(await res.text(), res.status)
+}
+
+/** 上傳服務鏈：永久連結的 Catbox 優先，失敗時依序改用臨時服務（連結會失效） */
+const UPLOAD_PROVIDERS: UploadProvider[] = [
+  { label: 'Catbox', expiresInMs: null, upload: uploadToCatbox },
+  { label: 'Litterbox', expiresInMs: 72 * HOUR_MS, upload: uploadToLitterbox },
+  { label: 'temp.sh', expiresInMs: 3 * 24 * HOUR_MS, upload: uploadToTempSh },
+]
+
+/**
+ * 依序嘗試各上傳服務，回傳第一個成功的連結資訊。
+ * 全部失敗時丟出錯誤，訊息包含各服務的失敗原因，方便使用者判斷是服務停機還是網路問題。
+ */
+async function uploadPdfBuffer(
+  buf: Buffer,
+  filename: string,
+): Promise<{ url: string; providerLabel: string; expiresAt: string | null }> {
+  const failures: string[] = []
+  for (const provider of UPLOAD_PROVIDERS) {
+    try {
+      const url = await provider.upload(buf, filename)
+      return {
+        url,
+        providerLabel: provider.label,
+        expiresAt: provider.expiresInMs === null ? null : new Date(Date.now() + provider.expiresInMs).toISOString(),
+      }
+    } catch (err) {
+      failures.push(`${provider.label}：${err instanceof Error ? err.message : String(err)}`)
+    }
   }
-  return text
+  throw new Error(failures.join('；'))
 }
 
 export function registerPdfIpc(): void {
@@ -103,8 +189,8 @@ export function registerPdfIpc(): void {
       win.setBackgroundColor('#ffffff')
       const buf = await renderPdfBuffer(win)
       win.setBackgroundColor('#f4f4f1')
-      const url = await uploadToCatbox(buf, `通告表-${Date.now()}.pdf`)
-      return { ok: true, url }
+      const link = await uploadPdfBuffer(buf, `通告表-${Date.now()}.pdf`)
+      return { ok: true, ...link }
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) }
     }

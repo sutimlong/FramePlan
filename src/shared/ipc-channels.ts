@@ -52,7 +52,11 @@ export type PdfResult =
   | { ok: true; filePath: string }
   | { ok: false; canceled?: boolean; error?: string }
 
-/** 將 PDF 上傳到檔案代管服務的結果（成功時帶回公開網址，供產生分享 QR code） */
+/**
+ * 將 PDF 上傳到檔案代管服務的結果。
+ * 成功時帶回公開網址、服務名稱與連結失效時間（永久連結為 null），
+ * 供產生分享 QR code 與提示使用者連結何時失效。
+ */
 export type UploadResult =
-  | { ok: true; url: string }
+  | { ok: true; url: string; providerLabel: string; expiresAt: string | null }
   | { ok: false; error?: string }
