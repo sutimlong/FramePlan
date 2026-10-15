@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, Trash2 } from 'lucide-react'
 import { confirmAction } from '@/lib/confirm'
 import { defaultCrewCall } from '@/lib/defaults'
@@ -13,21 +14,39 @@ export function CrewManager() {
   const st = useProjectStore.getState
   const [newDept, setNewDept] = useState('')
 
+  const addDeptBtnRef = useRef<HTMLButtonElement>(null)
+  const [showFloatingAdd, setShowFloatingAdd] = useState(false)
+
+  useEffect(() => {
+    const el = addDeptBtnRef.current
+    if (!el) return
+    const root = el.closest('.content')
+    const observer = new IntersectionObserver(
+      (entries) => setShowFloatingAdd(!entries[0].isIntersecting),
+      { root, threshold: 0 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   const addDept = () => {
     const n = newDept.trim()
-    if (!n) return
+    if (!n) {
+      st().showToast('error', '請先輸入部門名稱')
+      return
+    }
     st().addDepartment(n)
     setNewDept('')
   }
 
   return (
-    <div className="view-grid">
+    <div className="view-grid fab-page">
       <p className="hint">人員名單由所有天共用；每位人員的「本日出勤」與「通告時間」只影響目前這一天。</p>
 
       <Card
         title="新增部門"
         actions={
-          <button className="btn small primary" onClick={addDept}>
+          <button ref={addDeptBtnRef} className="btn small primary" onClick={addDept}>
             <Plus size={14} /> 新增部門
           </button>
         }
@@ -93,6 +112,23 @@ export function CrewManager() {
           </Card>
         )
       })}
+      <div className="fab-wrap">
+        <AnimatePresence>
+          {showFloatingAdd && (
+            <motion.div
+              className="fab-group"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+            >
+              <TextField placeholder="部門名稱" value={newDept} onChange={setNewDept} onEnter={addDept} />
+              <button className="btn primary" onClick={addDept}>
+                <Plus size={14} /> 新增部門
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

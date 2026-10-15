@@ -143,6 +143,8 @@ export interface SceneItem {
   castIds: ID[]
   extrasNote: string
   location: string
+  /** 每場次備註（通告表「備註」欄、行程表編輯欄位共用） */
+  remark: string
   /** 分鏡圖片（參照 doc.assets 的 id） */
   storyboardAssetIds: ID[]
 }

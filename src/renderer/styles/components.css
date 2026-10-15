@@ -12,19 +12,22 @@
 .rundown-row.break { align-items: flex-end; background: #f3f1ea; }
 .drag-handle { border: 0; background: transparent; cursor: grab; color: var(--muted); padding: 4px 0; touch-action: none; }
 .scene-body { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-/* 行程表每場的欄位列：固定單列不換行，空間不足時各欄等比壓縮，
-   避免「臨演」被擠到第二行（改為 nowrap 後不再產生換行）。 */
+/* 行程表每場的欄位分兩列，各列固定單列不換行；空間不足時各欄等比壓縮。 */
 .scene-top { display: flex; gap: 8px; flex-wrap: nowrap; }
-/* 未指定寬度的欄位（內/外景、日/夜、場景、地點）平均分配剩餘空間 */
+/* 未指定寬度的欄位平均分配剩餘空間（第二列：場景、地點、臨演、備註） */
 .scene-top .field { flex: 1 1 90px; min-width: 48px; }
 /* 指定寬度的欄位保留原本基準寬，空間不足時可壓縮（flex-shrink: 1） */
 .scene-top .field.compact { flex: 0 1 110px; width: auto; }
+.scene-top .field.w-xs { flex: 0 1 56px; width: auto; }
 .scene-top .field.w-sm { flex: 0 1 70px; width: auto; }
 .scene-top .field.w-md { flex: 0 1 130px; width: auto; }
 .scene-top .field.w-lg { flex: 0 1 160px; width: auto; }
 .cast-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 2px 10px; cursor: pointer; font-size: 12px; }
 .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+/* 加入乘客清單：依組別分節，每節為組別標題 + 該組 chips */
+.picker-pop { display: flex; flex-direction: column; gap: 10px; padding: 8px 0 2px; }
+.picker-group { display: flex; flex-direction: column; gap: 4px; }
 
 .storyboard { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; border-top: 1px dashed var(--line); }
 .storyboard-head { display: flex; align-items: center; gap: 6px; }
@@ -59,6 +62,9 @@ mark { background: #fff3a3; }
 /* 本日資訊「地點」：主拍攝地的地點備註（富文字編輯器） */
 .place-notes { display: flex; flex-direction: column; gap: 4px; }
 
+/* 行程表「拍攝內容摘要」：欄位標題 + 富文字編輯器 */
+.scene-desc { display: flex; flex-direction: column; gap: 4px; }
+
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: grid; place-items: center; z-index: 50; }
 .modal { background: #fff; border-radius: 12px; width: 460px; overflow: hidden; }
 .modal-head, .modal-foot { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
@@ -71,3 +77,41 @@ mark { background: #fff3a3; }
 .toast.error { background: var(--danger); }
 
 .preview-wrap { display: flex; justify-content: center; padding-bottom: 30px; }
+
+/* 行程表頂部按鈕列（供 IntersectionObserver 觀察用，樣式與 .card-actions 一致） */
+.rundown-actions { display: flex; align-items: center; gap: 8px; }
+
+/* 捲動後浮現的底部浮動按鈕群組（行程表、工作人員共用） */
+.fab-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.fab-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+  pointer-events: auto;
+}
+
+.fab-group .field {
+  flex: none;
+  width: 220px;
+}
+
+/* 有浮動按鈕的頁面在捲動內容尾端預留空間，避免被固定定位的面板遮住 */
+.fab-page {
+  padding-bottom: 96px;
+}

@@ -6,13 +6,21 @@ interface TextProps {
   onChange: (v: string) => void
   placeholder?: string
   className?: string
+  onEnter?: () => void
 }
 
-export function TextField({ label, value, onChange, placeholder, className }: TextProps) {
+export function TextField({ label, value, onChange, placeholder, className, onEnter }: TextProps) {
   return (
     <label className={`field ${className ?? ''}`}>
       {label && <span className="field-label">{label}</span>}
-      <input value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      <input
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onEnter?.()
+        }}
+      />
     </label>
   )
 }

@@ -15,6 +15,8 @@ export interface Person {
   phone: string
   /** 當天是否出勤 */
   working: boolean
+  /** 所屬組別（演員固定為「演員」；工作人員為其部門名稱） */
+  group: string
 }
 
 /** 所有可乘車人員（演員 + 工作人員），並標註當天是否出勤 */
@@ -27,6 +29,7 @@ export function listPeople(doc: SchedDocument, day: ShootDay): Person[] {
     sub: `#${c.number}${c.characterName && c.actorName ? ` ${c.actorName}` : ''}`,
     phone: c.phone ?? '',
     working: day.castCalls[c.id]?.working ?? false,
+    group: '演員',
   }))
   const crew: Person[] = doc.crew.map((m) => ({
     id: m.id,
@@ -35,6 +38,7 @@ export function listPeople(doc: SchedDocument, day: ShootDay): Person[] {
     sub: [deptName.get(m.departmentId), m.position].filter(Boolean).join('・'),
     phone: m.phone ?? '',
     working: day.crewCalls[m.id]?.working ?? true,
+    group: deptName.get(m.departmentId) ?? '未分類',
   }))
   return [...cast, ...crew]
 }
@@ -45,6 +49,14 @@ export const vehicleTypeName = (v: Vehicle): string =>
 /** 當天有出車的車輛（依車輛清單順序） */
 export const runningVehicles = (doc: SchedDocument, day: ShootDay): Vehicle[] =>
   doc.vehicles.filter((v) => day.vehicleSchedules[v.id]?.running)
+
+/** 當天出勤但未安排在任何出車車輛上的人員（視為自行前往） */
+export function selfDrivingPeople(doc: SchedDocument, day: ShootDay): Person[] {
+  const onBoard = new Set(
+    runningVehicles(doc, day).flatMap((v) => day.vehicleSchedules[v.id].passengerIds),
+  )
+  return listPeople(doc, day).filter((p) => p.working && !onBoard.has(p.id))
+}
 
 export interface TransportIssue {
   vehicleId: string

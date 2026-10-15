@@ -21,6 +21,7 @@ const scene = (over: Partial<SceneItem> = {}): SceneItem => ({
   description: emptyRich(),
   castIds: [],
   extrasNote: '',
+  remark: '',
   storyboardAssetIds: [],
   ...over,
 })

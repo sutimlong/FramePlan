@@ -306,6 +306,11 @@ body {
   width: 70px;
 }
 
+.field.w-xs {
+  flex: none;
+  width: 56px;
+}
+
 .field.w-md {
   flex: none;
   width: 130px;

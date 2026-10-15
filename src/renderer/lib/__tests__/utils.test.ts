@@ -5,6 +5,7 @@ import {
   emptyRich,
   formatDateShort,
   formatDateZh,
+  formatTimestamp,
   isRichEmpty,
   omitKey,
   richFromText,
@@ -70,6 +71,13 @@ describe('formatDateShort', () => {
   it('空字串顯示未設定日期，非日期字串原樣回傳', () => {
     expect(formatDateShort('')).toBe('未設定日期')
     expect(formatDateShort('待確認')).toBe('待確認')
+  })
+})
+
+describe('formatTimestamp', () => {
+  it('輸出 yyyy.mm.dd - hh:mm:ss 並補零', () => {
+    expect(formatTimestamp(new Date(2025, 2, 5, 9, 8, 7))).toBe('2025.03.05 - 09:08:07')
+    expect(formatTimestamp(new Date(2024, 11, 31, 23, 59, 59))).toBe('2024.12.31 - 23:59:59')
   })
 })
 

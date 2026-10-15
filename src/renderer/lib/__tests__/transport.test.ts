@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SchedDocument, ShootDay } from '@shared/schema'
 import { createEmptyDocument, defaultCastCall, defaultCrewCall, defaultVehicleSchedule } from '@/lib/defaults'
-import { checkTransport, listPeople, runningVehicles, vehicleTypeName } from '@/lib/transport'
+import { checkTransport, listPeople, runningVehicles, selfDrivingPeople, vehicleTypeName } from '@/lib/transport'
 
 /** 建立測試用文件：2 台車、1 位演員、1 位工作人員，兩台車都出車 */
 function fixture(overrides: (doc: SchedDocument, day: ShootDay) => void = () => {}) {
@@ -158,5 +158,27 @@ describe('checkTransport：人員安排', () => {
       d.vehicleSchedules.v2.purpose = 'wrap'
     })
     expect(messages(doc, day)).toEqual([])
+  })
+})
+
+describe('selfDrivingPeople', () => {
+  it('所有人都有排車時回傳空陣列', () => {
+    const { doc, day } = fixture()
+    expect(selfDrivingPeople(doc, day)).toEqual([])
+  })
+
+  it('有出勤但未排車者視為自行前往', () => {
+    const { doc, day } = fixture((_d, d) => {
+      d.vehicleSchedules.v2.passengerIds = []
+    })
+    expect(selfDrivingPeople(doc, day).map((p) => p.id)).toEqual(['w1'])
+  })
+
+  it('未出勤者不算自行前往', () => {
+    const { doc, day } = fixture((_d, d) => {
+      d.vehicleSchedules.v2.passengerIds = []
+      d.crewCalls.w1.working = false
+    })
+    expect(selfDrivingPeople(doc, day)).toEqual([])
   })
 })

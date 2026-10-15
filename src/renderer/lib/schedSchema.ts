@@ -34,6 +34,7 @@ const scene = z.object({
   castIds: z.array(z.string()).catch([]),
   extrasNote: str,
   location: str,
+  remark: str,
   storyboardAssetIds: z.array(z.string()).catch([]),
 })
 const brk = z.object({

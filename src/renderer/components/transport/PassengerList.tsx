@@ -50,6 +50,14 @@ export function PassengerList({ vehicle: v, sched, people, seatInfo }: Props) {
 
   const available = people.filter((p) => (filter === 'all' || p.kind === filter) && !sched.passengerIds.includes(p.id))
 
+  // 依組別分組，維持「演員在前、部門依首次出現順序」的順序
+  const groups = new Map<string, Person[]>()
+  for (const p of available) {
+    const arr = groups.get(p.group)
+    if (arr) arr.push(p)
+    else groups.set(p.group, [p])
+  }
+
   return (
     <div className="passenger-box">
       <div className="passenger-head">
@@ -67,23 +75,30 @@ export function PassengerList({ vehicle: v, sched, people, seatInfo }: Props) {
       </div>
 
       {pickerOpen && (
-        <div className="cast-chips">
+        <div className="picker-pop">
           {people.length === 0 && <span className="muted">請先於「演員／工作人員」頁新增人員</span>}
           {available.length > 0 && (
-            <>
+            <div className="cast-chips">
               <button type="button" className="chip" onClick={() => addPassengers(available.filter((p) => p.working).map((p) => p.id))}>
                 + 全部出勤者
               </button>
               <button type="button" className="chip" onClick={() => addPassengers(available.map((p) => p.id))}>
                 + 全選
               </button>
-            </>
+            </div>
           )}
-          {available.map((p) => (
-            <button key={p.id} type="button" className={`chip ${p.working ? '' : 'dim'}`} onClick={() => addPassengers([p.id])} title={p.sub}>
-              {p.kind === 'cast' ? '演員' : '工作'}・{p.name}
-              {!p.working && '（不出勤）'}
-            </button>
+          {[...groups.entries()].map(([group, members]) => (
+            <div key={group} className="picker-group">
+              <span className="field-label">{group}</span>
+              <div className="cast-chips">
+                {members.map((p) => (
+                  <button key={p.id} type="button" className={`chip ${p.working ? '' : 'dim'}`} onClick={() => addPassengers([p.id])} title={p.sub}>
+                    {p.name}
+                    {!p.working && '（不出勤）'}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
           {people.length > 0 && available.length === 0 && <span className="muted">此分類人員都已在乘車名單</span>}
         </div>

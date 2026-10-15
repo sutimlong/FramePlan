@@ -137,8 +137,8 @@ const RundownRowBody = memo(function RundownRowBody({
         <div className="scene-top">
           <TimeField label="時間" compact value={item.time} onChange={(v) => update(item.id, { time: v })} />
           <TimeField label="結束" compact value={item.endTime ?? ''} onChange={(v) => update(item.id, { endTime: v })} />
-          <TextField label="場次" className="w-sm" value={item.sceneNumber} onChange={(v) => update(item.id, { sceneNumber: v })} />
-          <TextField label="鏡號" className="w-sm" value={item.shotNumber} onChange={(v) => update(item.id, { shotNumber: v })} />
+          <TextField label="場次" className="w-md" value={item.sceneNumber} onChange={(v) => update(item.id, { sceneNumber: v })} />
+          <TextField label="鏡號" className="w-md" value={item.shotNumber} onChange={(v) => update(item.id, { shotNumber: v })} />
           <SelectField
             label="鏡頭運動"
             className="w-lg"
@@ -147,19 +147,25 @@ const RundownRowBody = memo(function RundownRowBody({
             groups={CAMERA_MOVEMENT_GROUPS}
             onChange={(v) => update(item.id, { cameraMovement: v })}
           />
-          <SelectField label="內/外景" value={item.intExt} options={INT_EXT} onChange={(v) => update(item.id, { intExt: v })} />
-          <SelectField label="日/夜" value={item.dayNight} options={DAY_NIGHT} onChange={(v) => update(item.id, { dayNight: v })} />
+          <SelectField label="內/外景" className="w-sm" value={item.intExt} options={INT_EXT} onChange={(v) => update(item.id, { intExt: v })} />
+          <SelectField label="日/夜" className="w-xs" value={item.dayNight} options={DAY_NIGHT} onChange={(v) => update(item.id, { dayNight: v })} />
+        </div>
+        <div className="scene-top">
           <TextField label="場景 (Set)" value={item.setName} onChange={(v) => update(item.id, { setName: v })} />
           <TextField label="地點" value={item.location} onChange={(v) => update(item.id, { location: v })} />
-          <TextField label="臨演" className="w-md" value={item.extrasNote} onChange={(v) => update(item.id, { extrasNote: v })} />
+          <TextField label="臨演" value={item.extrasNote} onChange={(v) => update(item.id, { extrasNote: v })} />
+          <TextField label="備註" value={item.remark} onChange={(v) => update(item.id, { remark: v })} />
         </div>
-        <SlateEditor
-          compact
-          minHeight={36}
-          value={item.description}
-          onChange={(v) => update(item.id, { description: v })}
-          placeholder="拍攝內容摘要…"
-        />
+        <div className="scene-desc">
+          <span className="field-label">拍攝內容摘要</span>
+          <SlateEditor
+            compact
+            minHeight={36}
+            value={item.description}
+            onChange={(v) => update(item.id, { description: v })}
+            placeholder="拍攝內容摘要…"
+          />
+        </div>
         <div className="cast-chips">
           <span className="field-label">演員</span>
           {cast.length === 0 && <span className="muted">請先於「演員」頁新增角色</span>}
