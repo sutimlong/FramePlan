@@ -90,35 +90,27 @@ export function mapWmoCode(code: number): { condition: WeatherCondition; label: 
   }
 }
 
-/** 天氣狀況的英文標籤（通告表預覽的天氣概況列使用） */
-export const CONDITION_LABELS_EN: Record<WeatherCondition, string> = {
-  sunny: 'Sunny',
-  'partly-cloudy': 'Partly Cloudy',
-  cloudy: 'Cloudy',
-  rain: 'Rain',
-  snow: 'Snow',
-  storm: 'Thunderstorms',
-  fog: 'Foggy',
-}
-
-/** 16 方位風向縮寫，索引 0 為北 */
+/**
+ * 16 方位風向中文名稱，索引 0 為北。
+ * 天氣概況一律以中文呈現，因此不使用 N／ESE 之類的英文縮寫。
+ */
 const COMPASS = [
-  'N',
-  'NNE',
-  'NE',
-  'ENE',
-  'E',
-  'ESE',
-  'SE',
-  'SSE',
-  'S',
-  'SSW',
-  'SW',
-  'WSW',
-  'W',
-  'WNW',
-  'NW',
-  'NNW',
+  '北',
+  '北北東',
+  '東北',
+  '東北東',
+  '東',
+  '東南東',
+  '東南',
+  '南南東',
+  '南',
+  '南南西',
+  '西南',
+  '西南西',
+  '西',
+  '西北西',
+  '西北',
+  '北北西',
 ]
 
 const roundOrNull = (v: number | null | undefined): number | null =>
@@ -132,8 +124,8 @@ const convertTemp = (celsius: number, unit: TempUnit): number =>
 const toUnit = (celsius: number | null | undefined, unit: TempUnit): number | null =>
   typeof celsius === 'number' && Number.isFinite(celsius) ? convertTemp(celsius, unit) : null
 
-/** 風向角度轉為方位縮寫（如 121° → ESE） */
-function toCompass(degrees: number | null | undefined): string {
+/** 風向角度轉為中文方位（如 121° → 東南東），沒有資料時回傳空字串 */
+export function toCompass(degrees: number | null | undefined): string {
   if (typeof degrees !== 'number' || !Number.isFinite(degrees)) return ''
   const normalized = ((degrees % 360) + 360) % 360
   return COMPASS[Math.round(normalized / 22.5) % 16]
@@ -158,25 +150,31 @@ function toSunshineChance(
 }
 
 /**
- * 組出通告表天氣概況文字，格式與標準通告表一致：
- * 「Sunny, 0% chances of rain, 98% chance of sunshine. Wind 5 ESE」
+ * 組出天氣概況文字（中文）：
+ * 「陣雨，降雨機率 60%，日照機率 10%。風速 12 公里/小時 東南東」
  * 缺少的資料（例如歷史紀錄沒有降雨機率）會自動略過。
+ *
+ * `label` 為天氣狀況的細分名稱（來自 mapWmoCode，例如「陣雨」、「短暫雨」）；
+ * 未提供時退回 WEATHER_CONDITION_LABELS 的一般名稱（例如「下雨」），
+ * 兩者都與「天氣狀況」選單、通告表列印使用同一套中文標籤。
  */
 export function buildWeatherSummary(p: {
   condition: WeatherCondition
+  label?: string
   rainChance?: number | null
   sunshineChance?: number | null
   windSpeed?: number | null
   windDir?: string
 }): string {
   const segments: string[] = []
-  if (p.rainChance != null) segments.push(`${p.rainChance}% chances of rain`)
-  if (p.sunshineChance != null) segments.push(`${p.sunshineChance}% chance of sunshine`)
+  if (p.rainChance != null) segments.push(`降雨機率 ${p.rainChance}%`)
+  if (p.sunshineChance != null) segments.push(`日照機率 ${p.sunshineChance}%`)
 
-  let text = CONDITION_LABELS_EN[p.condition] || CONDITION_LABELS_EN.sunny
-  if (segments.length > 0) text += `, ${segments.join(', ')}`
-  text += '.'
-  if (p.windSpeed != null && p.windDir) text += ` Wind ${p.windSpeed} ${p.windDir}`
+  let text = p.label?.trim() || WEATHER_CONDITION_LABELS[p.condition] || WEATHER_CONDITION_LABELS.sunny
+  if (segments.length > 0) text += `，${segments.join('，')}`
+  text += '。'
+  // 風速單位沿用 Open-Meteo 的預設值（公里/小時）
+  if (p.windSpeed != null && p.windDir) text += `風速 ${p.windSpeed} 公里/小時 ${p.windDir}`
   return text
 }
 
@@ -288,6 +286,7 @@ export async function fetchWeatherForDay(
 
     const summary = buildWeatherSummary({
       condition,
+      label,
       rainChance: roundOrNull(precipProb),
       sunshineChance: toSunshineChance(d.sunshine_duration?.[0], d.daylight_duration?.[0]),
       windSpeed: roundOrNull(d.wind_speed_10m_max?.[0]),
@@ -319,7 +318,7 @@ export async function fetchWeatherForDay(
     const data = await res.json()
     const d = data.daily
     const code = d.weather_code?.[0] ?? 0
-    const { condition } = mapWmoCode(code)
+    const { condition, label } = mapWmoCode(code)
     const low = toUnit(d.temperature_2m_min?.[0], tempUnit)
     const high = toUnit(d.temperature_2m_max?.[0], tempUnit)
     const sunrise = parseTimePart(d.sunrise?.[0] ?? '')
@@ -328,6 +327,7 @@ export async function fetchWeatherForDay(
     // 歷史資料 API 未提供降雨機率，該段文字會自動省略
     const summary = buildWeatherSummary({
       condition,
+      label,
       sunshineChance: toSunshineChance(d.sunshine_duration?.[0], d.daylight_duration?.[0]),
       windSpeed: roundOrNull(d.wind_speed_10m_max?.[0]),
       windDir: toCompass(d.wind_direction_10m_dominant?.[0]),
@@ -371,6 +371,8 @@ export async function fetchWeatherForDay(
   let lowC: number | null = null
   let highC: number | null = null
   let condition: WeatherCondition = 'partly-cloudy'
+  // 查不到資料時，概況文字沿用「多雲時晴」的中文標籤
+  let conditionLabel: string = WEATHER_CONDITION_LABELS['partly-cloudy']
 
   try {
     const [y, m, day] = dateTrimmed.split('-')
@@ -382,7 +384,9 @@ export async function fetchWeatherForDay(
       if (histData.daily) {
         lowC = histData.daily.temperature_2m_min?.[0] != null ? Math.round(histData.daily.temperature_2m_min[0]) : null
         highC = histData.daily.temperature_2m_max?.[0] != null ? Math.round(histData.daily.temperature_2m_max[0]) : null
-        condition = mapWmoCode(histData.daily.weather_code?.[0] ?? 2).condition
+        const mapped = mapWmoCode(histData.daily.weather_code?.[0] ?? 2)
+        condition = mapped.condition
+        conditionLabel = mapped.label
       }
     }
   } catch {
@@ -393,7 +397,7 @@ export async function fetchWeatherForDay(
   const high = toUnit(highC, tempUnit)
 
   // 情況 3 無即時觀測資料，僅能提供預估值，因此保留「預估氣候」提示
-  const summary = `${CONDITION_LABELS_EN[condition]}（預估氣候，氣溫約 ${
+  const summary = `${conditionLabel}（預估氣候，氣溫約 ${
     low ?? convertTemp(22, tempUnit)
   } °${tempUnit} ~ ${high ?? convertTemp(28, tempUnit)} °${tempUnit}）`
 
