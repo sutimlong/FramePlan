@@ -79,7 +79,9 @@
 /* 日出／日落圖示固定尺寸，避免 flex 壓縮變形 */
 .cs-weather p.sun .sun-icon { flex: none; }
 
-.cs-banner { text-align: center; font-size: 7.5pt; text-transform: uppercase; padding: 1mm 0 3mm; }
+/* 安全標語列：原本 7.5pt 比內文基準（.print-root 9.5pt）還小而不易閱讀，
+   放大到 11pt（與頁首資訊 .cs-title p 同級、仍低於區塊標題 13pt）以維持字級階層。 */
+.cs-banner { text-align: center; font-size: 11pt; text-transform: uppercase; padding: 1mm 0 3mm; }
 
 /* 區塊外框：區塊本身若畫上／左／右框，跨頁時這三邊會被一路畫到頁面底部，在頁尾留下殘線。
    改由「標題上框（保留上方圓角）」與內容（表格首/末欄、車表各車輛）撐出外框，
