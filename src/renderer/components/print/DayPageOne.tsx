@@ -1,6 +1,6 @@
 import { MapPin } from 'lucide-react'
 import type { SceneItem } from '@shared/schema'
-import { isRichEmpty } from '@/lib/utils'
+import { formatTimestamp, isRichEmpty } from '@/lib/utils'
 import { Header, Place, dash } from './DayParts'
 import type { DayCtx } from './DayParts'
 import { DayWeather } from './DayWeather'
@@ -41,7 +41,7 @@ export function DayPageOne(ctx: DayCtx) {
             ))}
             <p className="meta">現場醫護：{dash(day.setMedic)}</p>
             <p className="meta">劇本版本：{dash(doc.project.scriptVersion)}</p>
-            <p className="meta">排程版本：{dash(day.scheduleVersion)}</p>
+            <p className="meta">排程版本：{day.scheduleVersion?.trim() ? day.scheduleVersion : formatTimestamp()}</p>
           </div>
           {/* 地點欄位順序與「本日資訊」的地點卡一致：地點1 停車場、地點2 最近醫院、地點3 劇組辦公室、地點4 基地營 */}
           <div className="cs-places">

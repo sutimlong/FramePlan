@@ -2,6 +2,13 @@ import { DN, IE, Section, dash, formatTalentStatus } from './DayParts'
 import type { DayCtx } from './DayParts'
 import { RichView } from './RichView'
 
+/** 將臨演自由文字依「、」「，」「,」「/」「／」與換行拆成多個名稱 */
+const splitExtras = (s: string) =>
+  s
+    .split(/[、，,／\/\n]+/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+
 export function ScheduleTable({ doc, day }: DayCtx) {
   const castById = new Map(doc.cast.map((c) => [c.id, c]))
   return (
@@ -14,10 +21,10 @@ export function ScheduleTable({ doc, day }: DayCtx) {
           <col className="c-cam" />
           <col className="c-sb" />
           <col className="c-desc" />
-          <col className="c-cast" />
-          <col className="c-extras" />
+          <col className="c-people" />
           <col className="c-dn" />
           <col className="c-loc" />
+          <col className="c-remark" />
         </colgroup>
         <thead>
           <tr>
@@ -27,10 +34,10 @@ export function ScheduleTable({ doc, day }: DayCtx) {
             <th>鏡頭運動</th>
             <th>分鏡</th>
             <th>場景／內容</th>
-            <th>演員</th>
-            <th>臨演</th>
+            <th>演員／臨演</th>
             <th>日/夜</th>
             <th>地點</th>
+            <th>備註</th>
           </tr>
         </thead>
         <tbody>
@@ -77,24 +84,29 @@ export function ScheduleTable({ doc, day }: DayCtx) {
                   <RichView value={r.description} />
                 </td>
                 <td>
-                  {r.castIds.length === 0 ? (
+                  {r.castIds.length === 0 && !r.extrasNote.trim() ? (
                     '-'
                   ) : (
-                    <ul className="cast-list">
+                    <div className="cs-pills">
                       {r.castIds.map((id) => {
                         const c = castById.get(id)
                         return c ? (
-                          <li key={id}>
+                          <span key={id} className="cs-pill">
                             {[c.characterName, c.actorName].filter(Boolean).join(' - ') || `#${c.number}`}
-                          </li>
+                          </span>
                         ) : null
                       })}
-                    </ul>
+                      {splitExtras(r.extrasNote).map((name, i) => (
+                        <span key={`x${i}`} className="cs-pill">
+                          {`臨演 - ${name}`}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </td>
-                <td>{dash(r.extrasNote)}</td>
                 <td className="center">{DN[r.dayNight] || r.dayNight}</td>
                 <td>{dash(r.location)}</td>
+                <td>{dash(r.remark)}</td>
               </tr>
             ),
           )}

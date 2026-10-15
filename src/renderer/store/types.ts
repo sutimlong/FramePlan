@@ -30,9 +30,12 @@ export interface ProjectState {
   view: ViewKey
   printScope: PrintScope
   toast: { kind: 'info' | 'error'; text: string } | null
+  /** 匯出 PDF 時自動產生的分享 QR code（data URL）；null 表示不顯示 QR 尾頁 */
+  shareQr: string | null
 
   setView: (v: ViewKey) => void
   setPrintScope: (s: PrintScope) => void
+  setShareQr: (dataUrl: string | null) => void
   showToast: (kind: 'info' | 'error', text: string) => void
   clearToast: () => void
   setCurrentDay: (id: string) => void

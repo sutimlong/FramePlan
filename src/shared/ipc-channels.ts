@@ -3,6 +3,7 @@ export const IPC = {
   saveAs: 'sched:saveAs',
   open: 'sched:open',
   exportPdf: 'pdf:export',
+  uploadPdf: 'pdf:upload',
   setDirty: 'app:setDirty',
   setCurrentFile: 'app:setCurrentFile',
   appName: 'app:getName',
@@ -50,3 +51,8 @@ export interface PdfExportOptions {
 export type PdfResult =
   | { ok: true; filePath: string }
   | { ok: false; canceled?: boolean; error?: string }
+
+/** 將 PDF 上傳到檔案代管服務的結果（成功時帶回公開網址，供產生分享 QR code） */
+export type UploadResult =
+  | { ok: true; url: string }
+  | { ok: false; error?: string }

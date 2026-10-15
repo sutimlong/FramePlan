@@ -1,3 +1,4 @@
+import QRCode from 'qrcode'
 import { useProjectStore as useSchedStore } from '@/store/useProjectStore'
 import { confirmAction } from './confirm'
 import { createEmptyDocument } from './defaults'
@@ -113,6 +114,17 @@ async function waitForPrintAssets(root: HTMLElement | null): Promise<void> {
   await nextFrame()
 }
 
+/** 等待尾頁的 QR code 圖片渲染並載入完成（React commit + data URL 載入） */
+async function waitForQr(timeoutMs = 10_000): Promise<void> {
+  const deadline = performance.now() + timeoutMs
+  for (;;) {
+    const img = document.querySelector<HTMLImageElement>('img.cs-qr')
+    if (img?.complete) return
+    if (performance.now() >= deadline) return
+    await nextFrame()
+  }
+}
+
 export async function exportPdf(): Promise<void> {
   const a = api()
   if (!a) return notAvailable()
@@ -120,11 +132,39 @@ export async function exportPdf(): Promise<void> {
   const prev = s.view
   // 切換到預覽視圖，確保 CallsheetPrintView 已掛載
   s.setView('preview')
+  s.setShareQr(null)
   // 等預覽內容（含字型與分鏡圖片）真正就緒後再輸出，避免匯出空白或半成品的 PDF
-  const root = await waitForPrintRoot()
-  await waitForPrintAssets(root)
+  await waitForPrintAssets(await waitForPrintRoot())
+
+  // 第一次輸出：產生 PDF 並上傳到 Catbox，取得公開網址（不儲存檔案）
+  let qrUrl: string | null = null
+  try {
+    const up = await a.uploadPdf({ suggestedName: s.doc.project.projectName })
+    if (up.ok) qrUrl = up.url
+    else s.showToast('error', `上傳失敗：${up.error ?? '未知錯誤'}`)
+  } catch (err) {
+    s.showToast('error', err instanceof Error ? err.message : '上傳失敗')
+  }
+
+  // 以公開網址產生 QR code，並重新渲染預覽（尾頁插入 QR）
+  if (qrUrl) {
+    try {
+      const dataUrl = await QRCode.toDataURL(qrUrl, { width: 512, margin: 1 })
+      s.setShareQr(dataUrl)
+      await waitForQr()
+      await waitForPrintAssets(document.getElementById('print-root'))
+    } catch (err) {
+      s.showToast('error', '產生 QR code 失敗，將匯出不含 QR 的版本')
+      s.setShareQr(null)
+    }
+  } else {
+    s.showToast('error', '無法取得分享連結，將匯出不含 QR 的版本')
+  }
+
+  // 第二次輸出：此時畫面已含 QR 尾頁，進行存檔
   const res = await a.exportPdf({ suggestedName: s.doc.project.projectName })
   if (res.ok) s.showToast('info', `已匯出 PDF：${res.filePath}`)
   else if (!res.canceled) s.showToast('error', `匯出失敗：${res.error ?? '未知錯誤'}`)
+  s.setShareQr(null)
   useSchedStore.getState().setView(prev === 'preview' ? 'preview' : prev)
 }

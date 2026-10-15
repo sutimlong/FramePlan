@@ -51,6 +51,12 @@ export function formatDateShort(iso: string): string {
   return `${d.getMonth() + 1}/${d.getDate()} (${w})`
 }
 
+/** 現在時間 -> "yyyy.mm.dd - hh:mm:ss"（排程版本未填時，輸出 PDF 使用的自動版本號） */
+export function formatTimestamp(d: Date = new Date()): string {
+  const p = (x: number) => String(x).padStart(2, '0')
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} - ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
 export function omitKey<T>(rec: Record<string, T>, key: string): Record<string, T> {
   const copy = { ...rec }
   delete copy[key]

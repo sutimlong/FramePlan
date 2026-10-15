@@ -5,6 +5,7 @@ import type {
   PdfResult,
   SaveRequest,
   SaveResult,
+  UploadResult,
 } from '@shared/ipc-channels'
 
 export interface ElectronAPI {
@@ -12,6 +13,8 @@ export interface ElectronAPI {
   saveSchedFileAs(req: Omit<SaveRequest, 'filePath'>): Promise<SaveResult>
   openSchedFile(): Promise<OpenResult>
   exportPdf(opts?: PdfExportOptions): Promise<PdfResult>
+  /** 將目前預覽畫面輸出成 PDF 並上傳到檔案代管服務，回傳公開網址（不儲存檔案） */
+  uploadPdf(opts?: PdfExportOptions): Promise<UploadResult>
   getAppName(): Promise<string>
   /** 以主程序原生對話框顯示確認訊息 */
   confirm(opts: ConfirmOptions): Promise<boolean>

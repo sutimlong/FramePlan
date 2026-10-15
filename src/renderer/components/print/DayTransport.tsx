@@ -1,12 +1,13 @@
 import { VEHICLE_PURPOSE_LABELS } from '@shared/schema'
-import { listPeople, runningVehicles, vehicleTypeName } from '@/lib/transport'
+import { listPeople, runningVehicles, selfDrivingPeople, vehicleTypeName } from '@/lib/transport'
 import { Section, dash } from './DayParts'
 import type { DayCtx } from './DayParts'
 
-/** 通告表第二頁「車表安排」：只列出本日有出車的車輛；全部不出車則整區隱藏 */
+/** 通告表第二頁「車表安排」：列出本日出車車輛，並將沒排到車的出勤者標示為自行前往 */
 export function DayTransport({ doc, day }: DayCtx) {
   const vehicles = runningVehicles(doc, day)
-  if (vehicles.length === 0) return null
+  const selfDriving = selfDrivingPeople(doc, day)
+  if (vehicles.length === 0 && selfDriving.length === 0) return null
   const people = new Map(listPeople(doc, day).map((p) => [p.id, p]))
 
   return (
@@ -90,6 +91,9 @@ export function DayTransport({ doc, day }: DayCtx) {
           )
         })}
       </div>
+      {selfDriving.length > 0 && (
+        <p className="cs-selfdrive">自行前往：{selfDriving.map((p) => p.name).join('、')}</p>
+      )}
     </Section>
   )
 }

@@ -34,9 +34,11 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     view: 'project',
     printScope: 'day',
     toast: null,
+    shareQr: null,
 
     setView: (view) => set({ view }),
     setPrintScope: (printScope) => set({ printScope }),
+    setShareQr: (shareQr) => set({ shareQr }),
     showToast: (kind, text) => set({ toast: { kind, text } }),
     clearToast: () => set({ toast: null }),
     setCurrentDay: (id) => set({ currentDayId: id }),

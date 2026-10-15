@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveSchedFileAs: (req) => ipcRenderer.invoke('sched:saveAs', req),
   openSchedFile: () => ipcRenderer.invoke('sched:open'),
   exportPdf: (opts) => ipcRenderer.invoke('pdf:export', opts),
+  uploadPdf: (opts) => ipcRenderer.invoke('pdf:upload', opts),
   getAppName: () => ipcRenderer.invoke('app:getName'),
   confirm: (opts) => ipcRenderer.invoke('app:confirm', opts),
 

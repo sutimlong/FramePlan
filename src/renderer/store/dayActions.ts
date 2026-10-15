@@ -71,6 +71,7 @@ export function createDayActions(
           castIds: [],
           extrasNote: '',
           location: last?.location ?? '',
+          remark: '',
           storyboardAssetIds: [],
         }
         return { ...day, rundown: [...day.rundown, item] }

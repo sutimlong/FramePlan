@@ -6,6 +6,7 @@ export function CallsheetPrintView() {
   const doc = useProjectStore((s) => s.doc)
   const scope = useProjectStore((s) => s.printScope)
   const current = useProjectStore(selectCurrentDay)
+  const shareQr = useProjectStore((s) => s.shareQr)
 
   const list = scope === 'all' ? doc.days : [current]
 
@@ -20,6 +21,12 @@ export function CallsheetPrintView() {
           </div>
         )
       })}
+      {shareQr && (
+        <div className="cs-page cs-qr-page">
+          <img className="cs-qr" src={shareQr} alt="QR code" />
+          <p className="cs-qr-caption">掃描帶走通告表</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -15,7 +15,32 @@
   break-after: page; 
   position: relative; 
 }
-.cs-day:last-child .cs-page:last-child { margin-bottom: 0; page-break-after: auto; break-after: auto; }
+/* 最後一天的最後一頁：不強制分頁，避免尾端多出空白頁。
+   有 QR 尾頁時 .cs-day:last-child 不成立（QR 尾頁才是 .print-root 的最後一個子項），
+   故補 .cs-day:has(+ .cs-qr-page) 版本，讓 QR 尾頁接在同一頁後面，而不是被推到新的一頁。 */
+.cs-day:last-child .cs-page:last-child,
+.cs-day:has(+ .cs-qr-page) > .cs-page:last-child { margin-bottom: 0; page-break-after: auto; break-after: auto; }
+
+/* 匯出 PDF 尾頁：QR code 與標語，接在最後一頁內文之後（本身不強制分頁，避免多出空白頁）。
+   break-inside: avoid 讓 QR 與標語不會被分頁線切斷：當頁尾空間不足時，整塊一起移到下一頁。 */
+.cs-page.cs-qr-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4mm;
+  margin: 8mm 0 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  page-break-after: auto;
+  break-after: auto;
+}
+/* QR code 尺寸：較原尺寸（60mm）縮小 60% */
+.cs-qr { width: 24mm; height: 24mm; }
+/* 標語：較原尺寸（16pt）縮小 30%。
+   歸零 <p> 的瀏覽器預設 1em 上／下邊距，否則 flex 容器上的 gap: 12mm 會被多撐開約 4mm，
+   且整塊高度多出約 8mm 而更容易被推到下一頁。 */
+.cs-qr-caption { margin: 0; font-size: 11.2pt; font-weight: 600; letter-spacing: 0.1em; }
 
 .cs-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; border-bottom: 2px solid #000; padding-bottom: 6mm; margin-bottom: 4mm; }
 .cs-title h1 { margin: 0; font-size: 20pt; font-weight: 500; }
@@ -79,12 +104,12 @@
 .cs-table.cs-sched col.c-scene { width: 5%; }
 .cs-table.cs-sched col.c-shot { width: 6%; }
 .cs-table.cs-sched col.c-cam { width: 10%; }
-.cs-table.cs-sched col.c-sb { width: 24%; }
-.cs-table.cs-sched col.c-desc { width: 18%; }
-.cs-table.cs-sched col.c-cast { width: 10%; }
-.cs-table.cs-sched col.c-extras { width: 8%; }
+.cs-table.cs-sched col.c-sb { width: 20%; }
+.cs-table.cs-sched col.c-desc { width: 16%; }
+.cs-table.cs-sched col.c-people { width: 12%; }
 .cs-table.cs-sched col.c-dn { width: 5%; }
-.cs-table.cs-sched col.c-loc { width: 8%; }
+.cs-table.cs-sched col.c-loc { width: 7%; }
+.cs-table.cs-sched col.c-remark { width: 13%; }
 
 /* 分鏡欄位：顯示於「場次」與「場景/內容」之間 */
 .cs-table td.sb-cell { text-align: center; vertical-align: middle; }
@@ -99,6 +124,16 @@
 }
 .cs-table .sb-empty { color: #999; }
 .cs-table .cast-list { list-style: none; margin: 0; padding: 0; }
+.cs-table .cs-pills { display: flex; flex-wrap: wrap; gap: 1.5mm; align-items: flex-start; }
+.cs-table .cs-pill {
+  display: inline-block;
+  border: 0.4mm solid #000;
+  border-radius: 999px;
+  padding: 0.1mm 2mm;
+  font-size: 8.5pt;
+  line-height: 1.5;
+  white-space: nowrap;
+}
 .center { text-align: center; }
 .it { font-style: italic; }
 
@@ -132,6 +167,7 @@
 .cs-route { border-bottom: 1px solid #000; }
 .cs-vehicle .cs-table th { background: #444; font-size: 8pt; }
 .cs-vehicle .cs-table td { font-size: 8.5pt; padding: 1mm 2mm; }
+.cs-selfdrive { margin: 0; padding: 2mm 3mm; font-size: 8.5pt; border-top: 1px solid #000; border-left: 0.5mm solid #000; border-right: 0.5mm solid #000; background: #f4f4f4; }
 
 
 
@@ -141,7 +177,10 @@
 @media print {
   html, body, #root { height: auto !important; background: #fff !important; overflow: visible !important; }
   .sidebar, .toolbar, .daybar, .preview-bar, .toast, .modal-backdrop { display: none !important; }
-  .app, .main, .content, .view, .preview-wrap { display: block !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; max-width: none !important; background: #fff !important; transform: none !important; }
+  /* 覆寫 framer-motion 進場動畫寫在 inline style 的 transform 與 opacity：
+     printToPDF 若在動畫途中取值，整份 PDF 會偏淡（甚至接近全白）、內容偏移，
+     故列印時以 !important 強制還原（!important 可蓋過 inline 的一般宣告）。 */
+  .app, .main, .content, .view, .preview-wrap { display: block !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; max-width: none !important; background: #fff !important; transform: none !important; opacity: 1 !important; }
   .print-root { box-shadow: none; width: 100%; margin: 0 auto; background: #fff !important; }
   .cs-page { margin: 0; box-shadow: none; width: 100%; min-height: auto; padding: 0; background: #fff !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
