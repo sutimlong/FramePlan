@@ -1,3 +1,6 @@
+import { memo } from 'react'
+import type { CSSProperties } from 'react'
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { motion } from 'framer-motion'
@@ -21,21 +24,71 @@ const DAY_NIGHT = [
   { value: 'DUSK', label: '昏' },
 ] as const
 
+/** 拖曳把手需要的 dnd-kit 屬性（由 useSortable 取得，再往下傳給被 memo 的列內容） */
+interface DragHandleProps {
+  attributes: DraggableAttributes
+  listeners: DraggableSyntheticListeners
+  setActivatorNodeRef: (node: HTMLElement | null) => void
+}
+
+/**
+ * 行程表的可排序列。
+ *
+ * 拖曳要順的關鍵，是把「位移節點」與「動畫節點」拆成兩層：
+ *   外層 .rundown-item  只套用 dnd-kit 的 transform／transition，位移完全由 dnd-kit 決定。
+ *   內層 .rundown-row   才是 framer-motion 的動畫元素（只做進／退場的高度與透明度）。
+ * 兩者若併成同一元素，framer-motion 的 layout 投影會接管並覆寫該元素的 transform
+ * （必要時直接設成 none），拖曳時就會抖動、跟不上指標；因此這裡也不再使用 layout 屬性。
+ */
 export function RundownRow({ item }: { item: RundownItem }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
+  const { attributes, listeners, setActivatorNodeRef, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id })
+
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className={`rundown-item${isDragging ? ' dragging' : ''}`}>
+      <RundownRowBody
+        item={item}
+        attributes={attributes}
+        listeners={listeners}
+        setActivatorNodeRef={setActivatorNodeRef}
+      />
+    </div>
+  )
+}
+
+/**
+ * 列的內容（含動畫層）。
+ *
+ * 以 memo 包住：拖曳時 dnd-kit 每一影格都會更新外層的 transform 而重新渲染 RundownRow，
+ * 這裡的 props（item 與 dnd-kit 把手屬性）在拖曳過程中參考都不變，因此整列內容
+ * （Slate 編輯器、演員 chips、分鏡圖）不會跟著重繪。
+ * framer-motion 的退場動畫取自 presence context，motion 元件是以 useContext 訂閱，
+ * 不受 memo 影響，刪除列時的動畫仍會正常播放。
+ */
+const RundownRowBody = memo(function RundownRowBody({
+  item,
+  attributes,
+  listeners,
+  setActivatorNodeRef,
+}: { item: RundownItem } & DragHandleProps) {
   const update = useSchedStore((s) => s.updateRundownItem)
   const remove = useSchedStore((s) => s.removeRundownItem)
   const cast = useSchedStore((s) => s.doc.cast)
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 5 : undefined,
-    opacity: isDragging ? 0.85 : 1,
-  }
-
   const handle = (
-    <button className="drag-handle" {...attributes} {...listeners} aria-label="拖曳排序">
+    <button
+      ref={setActivatorNodeRef}
+      type="button"
+      className="drag-handle"
+      aria-label="拖曳排序"
+      {...attributes}
+      {...listeners}
+    >
       <GripVertical size={16} />
     </button>
   )
@@ -43,9 +96,6 @@ export function RundownRow({ item }: { item: RundownItem }) {
   if (item.kind === 'break') {
     return (
       <motion.div
-        ref={setNodeRef}
-        style={style}
-        layout="position"
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: 'auto' }}
         exit={{ opacity: 0, height: 0 }}
@@ -77,9 +127,6 @@ export function RundownRow({ item }: { item: RundownItem }) {
 
   return (
     <motion.div
-      ref={setNodeRef}
-      style={style}
-      layout="position"
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
@@ -138,4 +185,4 @@ export function RundownRow({ item }: { item: RundownItem }) {
       </button>
     </motion.div>
   )
-}
+})

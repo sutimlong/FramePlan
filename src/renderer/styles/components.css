@@ -1,4 +1,13 @@
 .rundown-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* 行程表每一列拆成兩層，拖曳才會順：
+   .rundown-item 外層：dnd-kit 的位移節點，只套用 transform／transition。
+   .rundown-row  內層：framer-motion 的動畫元素（只做進／退場的高度與透明度），不碰 transform。
+   兩者若是同一個元素，framer-motion 的 layout 投影會覆寫 transform，拖曳時就會抖動。 */
+.rundown-item { position: relative; }
+.rundown-item.dragging { z-index: 5; opacity: .85; border-radius: 10px; box-shadow: 0 6px 16px rgba(0, 0, 0, .18); will-change: transform; }
+.rundown-item.dragging .drag-handle { cursor: grabbing; }
+
 .rundown-row { display: flex; gap: 8px; align-items: flex-start; border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: #fcfcfa; overflow: hidden; }
 .rundown-row.break { align-items: flex-end; background: #f3f1ea; }
 .drag-handle { border: 0; background: transparent; cursor: grab; color: var(--muted); padding: 4px 0; touch-action: none; }
