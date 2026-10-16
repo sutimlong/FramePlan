@@ -64,6 +64,7 @@ export function createDayActions(
           sceneNumber: String(scenes.length + 1),
           shotNumber: '',
           cameraMovement: '',
+          customCameraMovement: '',
           intExt: last?.intExt ?? 'INT',
           dayNight: last?.dayNight ?? 'D',
           setName: '',

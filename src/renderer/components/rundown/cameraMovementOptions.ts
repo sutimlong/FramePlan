@@ -8,6 +8,14 @@ export interface CameraMovementGroup {
   options: CameraMovementOption[]
 }
 
+/** 「鏡頭運動」選擇「自訂」時，下拉選單使用的內部代碼（不會與既有選項衝突） */
+export const CAMERA_MOVEMENT_CUSTOM = '__custom__'
+
+/** 取得顯示／列印用的鏡頭運動文字：選「自訂」時回傳輸入文字，否則回傳選項本身 */
+export function cameraMovementText(cameraMovement: string, customCameraMovement: string | undefined): string {
+  return cameraMovement === CAMERA_MOVEMENT_CUSTOM ? (customCameraMovement ?? '') : cameraMovement
+}
+
 export const CAMERA_MOVEMENT_GROUPS: ReadonlyArray<CameraMovementGroup> = [
   {
     group: '靜態景別',
@@ -47,5 +55,9 @@ export const CAMERA_MOVEMENT_GROUPS: ReadonlyArray<CameraMovementGroup> = [
       { value: '鳥瞰角 (Top Shot)', label: '鳥瞰角 (Top Shot)' },
       { value: '傾斜角 (Dutch Angle)', label: '傾斜角 (Dutch Angle)' },
     ],
+  },
+  {
+    group: '其他',
+    options: [{ value: CAMERA_MOVEMENT_CUSTOM, label: '自訂' }],
   },
 ]

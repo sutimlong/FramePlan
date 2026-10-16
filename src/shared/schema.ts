@@ -136,6 +136,8 @@ export interface SceneItem {
   sceneNumber: string
   shotNumber: string
   cameraMovement: string
+  /** 「鏡頭運動」選擇「自訂」時的使用者輸入文字 */
+  customCameraMovement?: string
   intExt: IntExt
   dayNight: DayNight
   setName: string

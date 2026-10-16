@@ -9,7 +9,7 @@ import type { RundownItem } from '@shared/schema'
 import { useProjectStore as useSchedStore } from '@/store/useProjectStore'
 import { SelectField, TextField, TimeField } from '../common/Fields'
 import { SlateEditor } from '../editor/SlateEditor'
-import { CAMERA_MOVEMENT_GROUPS } from './cameraMovementOptions'
+import { CAMERA_MOVEMENT_CUSTOM, CAMERA_MOVEMENT_GROUPS } from './cameraMovementOptions'
 import { StoryboardPicker } from './StoryboardPicker'
 
 const INT_EXT = [
@@ -147,6 +147,13 @@ const RundownRowBody = memo(function RundownRowBody({
             groups={CAMERA_MOVEMENT_GROUPS}
             onChange={(v) => update(item.id, { cameraMovement: v })}
           />
+          {item.cameraMovement === CAMERA_MOVEMENT_CUSTOM && (
+            <TextField
+              label="自訂鏡頭運動"
+              value={item.customCameraMovement ?? ''}
+              onChange={(v) => update(item.id, { customCameraMovement: v })}
+            />
+          )}
           <SelectField label="內/外景" className="w-sm" value={item.intExt} options={INT_EXT} onChange={(v) => update(item.id, { intExt: v })} />
           <SelectField label="日/夜" className="w-xs" value={item.dayNight} options={DAY_NIGHT} onChange={(v) => update(item.id, { dayNight: v })} />
         </div>

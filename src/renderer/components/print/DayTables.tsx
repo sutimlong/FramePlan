@@ -1,6 +1,7 @@
 import { DN, IE, Section, dash, formatTalentStatus } from './DayParts'
 import type { DayCtx } from './DayParts'
 import { RichView } from './RichView'
+import { cameraMovementText } from '../rundown/cameraMovementOptions'
 
 /** 將臨演自由文字依「、」「，」「,」「/」「／」與換行拆成多個名稱 */
 const splitExtras = (s: string) =>
@@ -62,7 +63,7 @@ export function ScheduleTable({ doc, day }: DayCtx) {
                 <td>{r.endTime ? `${dash(r.time)}–${r.endTime}` : dash(r.time)}</td>
                 <td className="center">{r.sceneNumber}</td>
                 <td className="center">{dash(r.shotNumber)}</td>
-                <td className="center">{dash(r.cameraMovement)}</td>
+                <td className="center">{dash(cameraMovementText(r.cameraMovement, r.customCameraMovement))}</td>
                 <td className="sb-cell">
                   {r.storyboardAssetIds.length === 0 ? (
                     <span className="sb-empty">-</span>

@@ -27,6 +27,7 @@ const scene = z.object({
   sceneNumber: str,
   shotNumber: str,
   cameraMovement: str,
+  customCameraMovement: optStr,
   intExt: z.enum(['INT', 'EXT', 'INT/EXT']).catch('INT'),
   dayNight: z.enum(['D', 'N', 'DAWN', 'DUSK']).catch('D'),
   setName: str,
