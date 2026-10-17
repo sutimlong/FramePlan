@@ -73,6 +73,8 @@ export function createDayActions(
           extrasNote: '',
           location: last?.location ?? '',
           remark: '',
+          remarkOn: false,
+          deptNotes: {},
           storyboardAssetIds: [],
         }
         return { ...day, rundown: [...day.rundown, item] }

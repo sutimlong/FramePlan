@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
+import type { DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, Trash2 } from 'lucide-react'
 import { confirmAction } from '@/lib/confirm'
 import { defaultCrewCall } from '@/lib/defaults'
 import { useCurrentDay, useProjectStore } from '@/store/useProjectStore'
-import { Card, TextField, TimeField } from '../common/Fields'
-import { PhotoCropper } from '../common/PhotoCropper'
+import { Card, TextField } from '../common/Fields'
+import { CrewRow } from './CrewRow'
 
 export function CrewManager() {
   const departments = useProjectStore((s) => s.doc.departments)
@@ -16,6 +19,23 @@ export function CrewManager() {
 
   const addDeptBtnRef = useRef<HTMLButtonElement>(null)
   const [showFloatingAdd, setShowFloatingAdd] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  /**
+   * 每個部門各有一組 DndContext，所以拖曳只會發生在同一部門內；
+   * 這時直接用全體人員的索引做 arrayMove 即可（其他部門的相對順序不受影響）。
+   */
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e
+    if (!over || active.id === over.id) return
+    const from = crew.findIndex((c) => c.id === active.id)
+    const to = crew.findIndex((c) => c.id === over.id)
+    if (from >= 0 && to >= 0) st().moveCrew(from, to)
+  }
 
   useEffect(() => {
     const el = addDeptBtnRef.current
@@ -41,7 +61,7 @@ export function CrewManager() {
 
   return (
     <div className="view-grid fab-page">
-      <p className="hint">人員名單由所有天共用；每位人員的「本日出勤」與「通告時間」只影響目前這一天。</p>
+      <p className="hint">人員名單由所有天共用；每位人員的「本日出勤」與「通告時間」只影響目前這一天。拖曳左側把手可調整同一部門內的人員順序。</p>
 
       <Card
         title="新增部門"
@@ -85,30 +105,22 @@ export function CrewManager() {
           >
             <TextField label="部門名稱" value={dep.name} onChange={(v) => st().renameDepartment(dep.id, v)} />
             {members.length === 0 && <p className="muted">此部門尚無人員</p>}
-            {members.map((m) => {
-              const call = day.crewCalls[m.id] ?? defaultCrewCall()
-              return (
-                <div className={`row-inline ${call.working ? '' : 'off'}`} key={m.id}>
-                  <PhotoCropper assetId={m.photoAssetId} onChange={(id) => st().updateCrew(m.id, { photoAssetId: id })} />
-                  <TextField placeholder="職位" value={m.position} onChange={(v) => st().updateCrew(m.id, { position: v })} />
-                  <TextField placeholder="姓名" value={m.name} onChange={(v) => st().updateCrew(m.id, { name: v })} />
-                  <TextField placeholder="電話" value={m.phone ?? ''} onChange={(v) => st().updateCrew(m.id, { phone: v })} />
-                  <label className="check small">
-                    <input type="checkbox" checked={call.working} onChange={(e) => st().setCrewCall(m.id, { working: e.target.checked })} />
-                    本日出勤
-                  </label>
-                  <TimeField
-                    compact
-                    label={`通告（預設 ${day.crewCall || '—'}）`}
-                    value={call.callTime}
-                    onChange={(v) => st().setCrewCall(m.id, { callTime: v })}
-                  />
-                  <button className="icon-btn danger" onClick={() => st().removeCrew(m.id)} aria-label="刪除">
-                    <Trash2 size={14} />
-                  </button>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+              <SortableContext items={members.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+                <div className="crew-list">
+                  <AnimatePresence initial={false}>
+                    {members.map((m) => (
+                      <CrewRow
+                        key={m.id}
+                        member={m}
+                        call={day.crewCalls[m.id] ?? defaultCrewCall()}
+                        dayCall={day.crewCall}
+                      />
+                    ))}
+                  </AnimatePresence>
                 </div>
-              )
-            })}
+              </SortableContext>
+            </DndContext>
           </Card>
         )
       })}

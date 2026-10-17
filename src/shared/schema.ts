@@ -128,6 +128,33 @@ export interface WeatherInfo {
   sunset: TimeString
 }
 
+/** 場次的部門說明種類：美術／道具／服裝／化妝／髮型 */
+export type SceneDeptNoteKey = 'art' | 'props' | 'wardrobe' | 'makeup' | 'hair'
+
+/** 部門說明在 UI 與通告表上的固定順序 */
+export const SCENE_DEPT_NOTE_KEYS: readonly SceneDeptNoteKey[] = [
+  'art',
+  'props',
+  'wardrobe',
+  'makeup',
+  'hair',
+]
+
+export const SCENE_DEPT_NOTE_LABELS: Record<SceneDeptNoteKey, string> = {
+  art: '美術說明',
+  props: '道具說明',
+  wardrobe: '服裝說明',
+  makeup: '化妝說明',
+  // 沿用舊 key：舊檔的「裝髮說明」（梳化）讀入後會以「髮型說明」呈現
+  hair: '髮型說明',
+}
+
+/**
+ * 部門說明：key 存在＝該項已勾選（值為說明文字，可為空字串）。
+ * 未勾選的項目不帶 key，因此勾選狀態會隨檔案保存；舊檔沒有此欄位，讀取時補成 {}。
+ */
+export type SceneDeptNotes = Partial<Record<SceneDeptNoteKey, string>>
+
 export interface SceneItem {
   id: ID
   kind: 'scene'
@@ -145,8 +172,16 @@ export interface SceneItem {
   castIds: ID[]
   extrasNote: string
   location: string
-  /** 每場次備註（通告表「備註」欄、行程表編輯欄位共用） */
+  /** 每場次備註（通告表：與部門說明合併印在同一列；行程表編輯欄位共用此資料） */
   remark: string
+  /**
+   * 行程表「備註」勾選框是否已勾選。勾選後才顯示文字框，
+   * 因此「已勾選但還沒輸入內容」也要保存（舊檔沒有此欄位＝false，
+   * 但 remark 已有文字時仍視為已勾選，見 sceneRemarkOn）。
+   */
+  remarkOn?: boolean
+  /** 部門說明（美術／道具／服裝／化妝／髮型），未勾選的項目不會有 key */
+  deptNotes: SceneDeptNotes
   /** 分鏡圖片（參照 doc.assets 的 id） */
   storyboardAssetIds: ID[]
 }

@@ -11,10 +11,33 @@
 .rundown-row { display: flex; gap: 8px; align-items: flex-start; border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: #fcfcfa; overflow: hidden; }
 .rundown-row.break { align-items: flex-end; background: #f3f1ea; }
 .drag-handle { border: 0; background: transparent; cursor: grab; color: var(--muted); padding: 4px 0; touch-action: none; }
+
+/* 演員名單每一列沿用相同的兩層結構：
+   .cast-item 外層：dnd-kit 的位移節點（拖曳時相鄰列自動讓位，也就是排擠效果）。
+   .cast-row  內層：framer-motion 的動畫元素（只做進／退場的高度與透明度）。 */
+.cast-list { display: flex; flex-direction: column; gap: 10px; }
+.cast-item { position: relative; }
+.cast-item.dragging { z-index: 5; background: #fff; border-radius: 8px; box-shadow: 0 6px 16px rgba(0, 0, 0, .18); will-change: transform; }
+.cast-item.dragging .drag-handle { cursor: grabbing; }
+.cast-row { display: flex; gap: 8px; align-items: flex-end; }
+
+/* 工作人員名單每一列同樣是兩層結構（版型沿用 .row-inline，.crew-row 只是動畫層的標記）。 */
+.crew-list { display: flex; flex-direction: column; gap: 12px; }
+.crew-item { position: relative; }
+.crew-item.dragging { z-index: 5; background: #fff; border-radius: 8px; box-shadow: 0 6px 16px rgba(0, 0, 0, .18); will-change: transform; }
+.crew-item.dragging .drag-handle { cursor: grabbing; }
+
+/* 未勾選「本日出勤」的人員列：文字框（職位／姓名／電話／通告時間）內的字轉為灰色。
+   勾選框是 .check 不是 .field，所以不會被這條規則影響。
+   淡化改用 .crew-row.row-inline.off 提高特異度（days.css 在 components.css 之後載入，
+   否則同特異度的 .row-inline.off 55% 會蓋掉這裡），避免灰字再疊上半透明而看不清楚。 */
+.crew-row.row-inline.off { opacity: .8; }
+.crew-row.off .field input { color: var(--muted); }
+
 .scene-body { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 /* 行程表每場的欄位分兩列，各列固定單列不換行；空間不足時各欄等比壓縮。 */
 .scene-top { display: flex; gap: 8px; flex-wrap: nowrap; }
-/* 未指定寬度的欄位平均分配剩餘空間（第二列：場景、地點、臨演、備註） */
+/* 未指定寬度的欄位平均分配剩餘空間（第二列：場景、地點、臨演） */
 .scene-top .field { flex: 1 1 90px; min-width: 48px; }
 /* 指定寬度的欄位保留原本基準寬，空間不足時可壓縮（flex-shrink: 1） */
 .scene-top .field.compact { flex: 0 1 110px; width: auto; }
@@ -25,6 +48,13 @@
 .cast-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 2px 10px; cursor: pointer; font-size: 12px; }
 .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+/* 行程表「說明」：六個勾選框（美術／道具／服裝／化妝／髮型／備註）排成一列，
+   勾選後才在下方展開對應的文字框（滿寬，依勾選項目的固定順序往下堆疊）。 */
+.scene-notes { display: flex; flex-direction: column; gap: 6px; }
+.scene-notes .note-checks { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.scene-notes .check { font-size: 12px; color: var(--muted); white-space: nowrap; flex: none; }
+.scene-notes .note-inputs { display: flex; flex-direction: column; gap: 6px; }
+.scene-notes .note-input { width: 100%; min-width: 0; }
 /* 加入乘客清單：依組別分節，每節為組別標題 + 該組 chips */
 .picker-pop { display: flex; flex-direction: column; gap: 10px; padding: 8px 0 2px; }
 .picker-group { display: flex; flex-direction: column; gap: 4px; }
@@ -37,15 +67,44 @@
 .storyboard-thumb img { width: 72px; height: 48px; object-fit: cover; border: 1px solid var(--line); border-radius: 6px; display: block; }
 .storyboard-thumb .icon-btn { position: absolute; top: 2px; right: 2px; background: rgba(255,255,255,.85); padding: 2px; border-radius: 4px; }
 
+/* 分鏡縮圖的浮動放大預覽：由 StoryboardPicker 以 portal 掛在 document.body，
+   以 position: fixed + transform 定位到游標旁（行程表列有 overflow: hidden，掛在卡片內會被裁切）。
+   pointer-events: none 讓預覽不擋住游標，縮圖的 hover 狀態才不會被中斷。 */
+.sb-preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 45;
+  pointer-events: none;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .28);
+}
+.sb-preview img { display: block; width: auto; height: auto; max-width: 320px; max-height: 320px; }
+
+/* 縮圖本身就是開啟大圖的按鈕：外觀沿用上面的 .storyboard-thumb img，只補可點擊的游標與鍵盤焦點框。 */
+.storyboard-thumb-btn { display: block; border: 0; background: transparent; padding: 0; border-radius: 6px; cursor: zoom-in; }
+.storyboard-thumb-btn:focus-visible { outline: 2px solid #111; outline-offset: 1px; }
+
+/* 點縮圖開啟的分鏡大圖視窗：遮罩沿用 .modal-backdrop（print.css 已排除列印），
+   內容放在 .sb-viewer，圖片最大 84vw × 84vh，右上角一顆固定的關閉鈕。 */
+.sb-viewer { position: relative; padding: 8px; background: #fff; border-radius: 12px; box-shadow: 0 18px 50px rgba(0, 0, 0, .35); }
+.sb-viewer img { display: block; width: auto; height: auto; max-width: 84vw; max-height: 84vh; border-radius: 6px; }
+.sb-viewer-close { position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, .9); border-radius: 6px; padding: 4px; }
+
 .person-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .person-head { display: flex; gap: 10px; align-items: flex-end; }
 .vehicle-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .person-times { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .badge { background: var(--accent); color: #fff; border-radius: 6px; min-width: 26px; height: 28px; display: grid; place-items: center; font-weight: 600; flex: none; }
-
-.photo { display: flex; align-items: center; gap: 2px; flex: none; }
-.photo-box { width: 44px; height: 44px; border-radius: 50%; border: 1px dashed #aaa; display: grid; place-items: center; cursor: pointer; overflow: hidden; color: var(--muted); background: #fafafa; }
-.photo-box img { width: 100%; height: 100%; object-fit: cover; }
+/* 演員編號：保留徽章外觀，但可直接點擊修改（拖曳排序不會動到編號）。
+   輸入框以絕對定位填滿整個徽章，點徽章任何一處都能直接編輯。 */
+.badge-edit { position: relative; min-width: 46px; }
+.badge-edit input { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; text-align: center; padding: 0; }
+.badge-edit input:focus { outline: 0; }
+.badge-edit:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .slate-box { border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .slate-toolbar { display: flex; gap: 2px; padding: 4px; border-bottom: 1px solid var(--line); align-items: center; }
@@ -70,8 +129,6 @@ mark { background: #fff3a3; }
 .modal-head, .modal-foot { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
 .modal-head h3 { margin: 0; font-size: 14px; }
 .modal-foot { justify-content: flex-end; gap: 8px; }
-.crop-area { position: relative; height: 320px; background: #222; }
-.zoom-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
 
 .toast { position: fixed; right: 20px; bottom: 20px; background: #111; color: #fff; padding: 10px 16px; border-radius: 8px; cursor: pointer; max-width: 420px; z-index: 60; }
 .toast.error { background: var(--danger); }

@@ -1,5 +1,12 @@
 import type { Descendant } from 'slate'
-import type { RichText } from '@shared/schema'
+import {
+  SCENE_DEPT_NOTE_KEYS,
+  SCENE_DEPT_NOTE_LABELS,
+  type RichText,
+  type SceneDeptNoteKey,
+  type SceneDeptNotes,
+  type SceneItem,
+} from '@shared/schema'
 
 export const uid = (): string => crypto.randomUUID()
 
@@ -63,4 +70,74 @@ export function omitKey<T>(rec: Record<string, T>, key: string): Record<string, 
   return copy
 }
 
+/**
+ * 切換部門說明：勾選＝建立空字串欄位；取消勾選＝移除該欄位（已輸入的文字會一併清除）。
+ */
+export function toggleSceneDeptNote(notes: SceneDeptNotes, key: SceneDeptNoteKey): SceneDeptNotes {
+  const next: SceneDeptNotes = { ...notes }
+  if (key in next) delete next[key]
+  else next[key] = ''
+  return next
+}
+
+/**
+ * 通告表列印用：取出「已勾選且已填寫內容」的部門說明（依 SCENE_DEPT_NOTE_KEYS 順序）。
+ * 回傳空陣列＝該場次不印說明列。
+ */
+export function filledSceneDeptNotes(
+  notes: SceneDeptNotes | undefined,
+): Array<{ key: SceneDeptNoteKey; label: string; text: string }> {
+  return SCENE_DEPT_NOTE_KEYS.flatMap((key) => {
+    const text = (notes?.[key] ?? '').trim()
+    return text ? [{ key, label: SCENE_DEPT_NOTE_LABELS[key], text }] : []
+  })
+}
+
+/**
+ * 行程表「備註」勾選框是否已勾選。
+ * 勾選狀態存在 remarkOn；舊檔沒有旗標、但有已輸入的備註文字時仍視為已勾選，
+ * 以免打開舊檔後看不到既有備註。
+ */
+export function sceneRemarkOn(item: Pick<SceneItem, 'remark' | 'remarkOn'>): boolean {
+  return item.remarkOn === true || item.remark.trim() !== ''
+}
+
+/**
+ * 切換「備註」勾選：勾選＝打開文字框並保留文字；
+ * 取消勾選＝關閉文字框並清空文字（與部門說明一致，不保留草稿）。
+ * 回傳的物件可直接送進 updateRundownItem。
+ */
+export function toggleSceneRemark(
+  item: Pick<SceneItem, 'remark' | 'remarkOn'>,
+): Pick<SceneItem, 'remark' | 'remarkOn'> {
+  return sceneRemarkOn(item) ? { remarkOn: false, remark: '' } : { remarkOn: true, remark: item.remark }
+}
+
 export const cx = (...a: Array<string | false | null | undefined>): string => a.filter(Boolean).join(' ')
+
+/**
+ * 浮動預覽的左上角座標：預設放在游標右下方 gap 處，
+ * 右邊或下邊空間不足時翻到游標的左側／上側，並一律夾在 padding 邊界內，
+ * 避免預覽被視窗邊緣切掉（視窗比預覽還小時固定在 padding 處）。
+ */
+export function floatNearCursor(
+  cursor: { x: number; y: number },
+  size: { width: number; height: number },
+  viewport: { width: number; height: number },
+  gap = 18,
+  padding = 12,
+): { x: number; y: number } {
+  const x =
+    cursor.x + gap + size.width <= viewport.width - padding
+      ? cursor.x + gap
+      : cursor.x - gap - size.width
+  const y =
+    cursor.y + gap + size.height <= viewport.height - padding
+      ? cursor.y + gap
+      : cursor.y - gap - size.height
+  const clamp = (v: number, max: number) => Math.min(Math.max(v, padding), Math.max(padding, max))
+  return {
+    x: clamp(x, viewport.width - padding - size.width),
+    y: clamp(y, viewport.height - padding - size.height),
+  }
+}

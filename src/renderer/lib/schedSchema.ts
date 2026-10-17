@@ -19,6 +19,19 @@ const place = z.object({
   lng: z.number().optional().catch(undefined),
 })
 
+/** 部門說明文字：型別錯誤一律視為空字串 */
+const deptNoteText = z.string().catch('')
+/** 只保留五個已知的 key（未知 key 由 z.object 預設 strip 掉）；整欄缺漏／型別錯誤 → {} */
+const deptNotes = z
+  .object({
+    art: deptNoteText.optional(),
+    props: deptNoteText.optional(),
+    wardrobe: deptNoteText.optional(),
+    makeup: deptNoteText.optional(),
+    hair: deptNoteText.optional(),
+  })
+  .catch({})
+
 const scene = z.object({
   id,
   kind: z.literal('scene'),
@@ -36,6 +49,9 @@ const scene = z.object({
   extrasNote: str,
   location: str,
   remark: str,
+  /** 備註勾選框的狀態（舊檔缺漏或型別錯誤 → 未勾選） */
+  remarkOn: z.boolean().catch(false),
+  deptNotes,
   storyboardAssetIds: z.array(z.string()).catch([]),
 })
 const brk = z.object({

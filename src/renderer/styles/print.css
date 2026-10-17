@@ -100,18 +100,19 @@
 .cs-section > .cs-table td:first-child { border-left: 0.5mm solid #000; }
 .cs-section > .cs-table td:last-child { border-right: 0.5mm solid #000; }
 
-/* 行程表欄寬：分鏡：場景/內容 = 6:4 */
+/* 行程表欄寬：備註已改為與部門說明共用同一列（橫跨整列的下方列），少一欄（10 → 9 欄）。
+   寬度分配以「分鏡圖與場景／內容文字要看清楚」為主：分鏡 25%、場景/內容 23% 為最寬的兩欄，
+   演員/臨演只放姓名與臨演名（可換行），縮回原本的 12% 把空間讓給前兩欄。 */
 .cs-table.cs-sched { table-layout: fixed; }
 .cs-table.cs-sched col.c-time { width: 6%; }
 .cs-table.cs-sched col.c-scene { width: 5%; }
 .cs-table.cs-sched col.c-shot { width: 6%; }
 .cs-table.cs-sched col.c-cam { width: 10%; }
-.cs-table.cs-sched col.c-sb { width: 20%; }
-.cs-table.cs-sched col.c-desc { width: 16%; }
+.cs-table.cs-sched col.c-sb { width: 25%; }
+.cs-table.cs-sched col.c-desc { width: 23%; }
 .cs-table.cs-sched col.c-people { width: 12%; }
 .cs-table.cs-sched col.c-dn { width: 5%; }
-.cs-table.cs-sched col.c-loc { width: 7%; }
-.cs-table.cs-sched col.c-remark { width: 13%; }
+.cs-table.cs-sched col.c-loc { width: 8%; }
 
 /* 分鏡欄位：顯示於「場次」與「場景/內容」之間 */
 .cs-table td.sb-cell { text-align: center; vertical-align: middle; }
@@ -138,6 +139,10 @@
 }
 .center { text-align: center; }
 .it { font-style: italic; }
+
+/* 部門說明（美術／道具／服裝／化妝／髮型）：場次若填了說明，於該列下方多印一列，說明橫跨其餘欄位 */
+.cs-table tr.cs-notes td { font-size: 9pt; }
+.cs-table .cs-note-line + .cs-note-line { margin-top: 0.8mm; }
 
 .cs-bottom { display: grid; grid-template-columns: 1fr 1.3fr; gap: 6mm; align-items: start; }
 .cs-bar { margin: 0; background: #000; color: #fff; padding: 1.5mm 3mm; font-size: 9.5pt; font-weight: 600; }
@@ -178,7 +183,7 @@
 
 @media print {
   html, body, #root { height: auto !important; background: #fff !important; overflow: visible !important; }
-  .sidebar, .toolbar, .daybar, .preview-bar, .toast, .modal-backdrop { display: none !important; }
+  .sidebar, .toolbar, .daybar, .preview-bar, .toast, .modal-backdrop, .sb-preview { display: none !important; }
   /* 覆寫 framer-motion 進場動畫寫在 inline style 的 transform 與 opacity：
      printToPDF 若在動畫途中取值，整份 PDF 會偏淡（甚至接近全白）、內容偏移，
      故列印時以 !important 強制還原（!important 可蓋過 inline 的一般宣告）。 */

@@ -65,11 +65,15 @@ export interface ProjectState {
   addCasts: (items: Array<Partial<CastMember>>) => void
   updateCast: (id: string, p: Partial<CastMember>) => void
   removeCast: (id: string) => void
+  /** 調整演員名單順序（只換列的位置，不動編號） */
+  moveCast: (from: number, to: number) => void
   setCastCall: (castId: string, p: Partial<CastCall>) => void
 
   addCrew: (departmentId: string) => void
   updateCrew: (id: string, p: Partial<CrewMember>) => void
   removeCrew: (id: string) => void
+  /** 調整工作人員順序（限同一部門內；只換位置，不動其他資料） */
+  moveCrew: (from: number, to: number) => void
   setCrewCall: (crewId: string, p: Partial<CrewCall>) => void
   addDepartment: (name: string) => void
   renameDepartment: (id: string, name: string) => void

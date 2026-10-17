@@ -5,7 +5,9 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { motion } from 'framer-motion'
 import { GripVertical, Trash2 } from 'lucide-react'
+import { SCENE_DEPT_NOTE_KEYS, SCENE_DEPT_NOTE_LABELS } from '@shared/schema'
 import type { RundownItem } from '@shared/schema'
+import { sceneRemarkOn, toggleSceneDeptNote, toggleSceneRemark } from '@/lib/utils'
 import { useProjectStore as useSchedStore } from '@/store/useProjectStore'
 import { SelectField, TextField, TimeField } from '../common/Fields'
 import { SlateEditor } from '../editor/SlateEditor'
@@ -125,6 +127,9 @@ const RundownRowBody = memo(function RundownRowBody({
       castIds: item.castIds.includes(id) ? item.castIds.filter((c) => c !== id) : [...item.castIds, id],
     })
 
+  // 說明區的「備註」勾選狀態（remark 為文字框內容，勾選狀態另外存在 remarkOn）
+  const remarkOn = sceneRemarkOn(item)
+
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
@@ -161,7 +166,6 @@ const RundownRowBody = memo(function RundownRowBody({
           <TextField label="場景 (Set)" value={item.setName} onChange={(v) => update(item.id, { setName: v })} />
           <TextField label="地點" value={item.location} onChange={(v) => update(item.id, { location: v })} />
           <TextField label="臨演" value={item.extrasNote} onChange={(v) => update(item.id, { extrasNote: v })} />
-          <TextField label="備註" value={item.remark} onChange={(v) => update(item.id, { remark: v })} />
         </div>
         <div className="scene-desc">
           <span className="field-label">拍攝內容摘要</span>
@@ -172,6 +176,47 @@ const RundownRowBody = memo(function RundownRowBody({
             onChange={(v) => update(item.id, { description: v })}
             placeholder="拍攝內容摘要…"
           />
+        </div>
+        <div className="scene-notes">
+          {/* 勾選框排成一列（美術／道具／服裝／化妝／髮型／備註），勾選狀態隨檔案保存 */}
+          <div className="note-checks">
+            {SCENE_DEPT_NOTE_KEYS.map((key) => (
+              <label key={key} className="check">
+                <input
+                  type="checkbox"
+                  checked={key in item.deptNotes}
+                  onChange={() => update(item.id, { deptNotes: toggleSceneDeptNote(item.deptNotes, key) })}
+                />
+                <span>{SCENE_DEPT_NOTE_LABELS[key]}</span>
+              </label>
+            ))}
+            <label className="check">
+              <input type="checkbox" checked={remarkOn} onChange={() => update(item.id, toggleSceneRemark(item))} />
+              <span>備註</span>
+            </label>
+          </div>
+          {/* 勾選後才在下方展開對應的文字框，依勾選項目的固定順序往下堆疊 */}
+          <div className="note-inputs">
+            {SCENE_DEPT_NOTE_KEYS.filter((key) => key in item.deptNotes).map((key) => (
+              <input
+                key={key}
+                className="note-input"
+                aria-label={SCENE_DEPT_NOTE_LABELS[key]}
+                value={item.deptNotes[key] ?? ''}
+                placeholder={`請輸入${SCENE_DEPT_NOTE_LABELS[key]}`}
+                onChange={(e) => update(item.id, { deptNotes: { ...item.deptNotes, [key]: e.target.value } })}
+              />
+            ))}
+            {remarkOn && (
+              <input
+                className="note-input"
+                aria-label="備註"
+                value={item.remark}
+                placeholder="請輸入備註"
+                onChange={(e) => update(item.id, { remark: e.target.value })}
+              />
+            )}
+          </div>
         </div>
         <div className="cast-chips">
           <span className="field-label">演員</span>

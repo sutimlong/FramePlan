@@ -1,3 +1,4 @@
+import { arrayMove } from '@dnd-kit/sortable'
 import type { CastMember, CrewMember, Department, SchedDocument, ShootDay, Vehicle } from '@shared/schema'
 import { defaultCastCall, defaultCrewCall, defaultVehicleSchedule } from '@/lib/defaults'
 import { omitKey, uid } from '@/lib/utils'
@@ -26,10 +27,12 @@ export type SharedActions = Pick<
   | 'addCasts'
   | 'updateCast'
   | 'removeCast'
+  | 'moveCast'
   | 'setCastCall'
   | 'addCrew'
   | 'updateCrew'
   | 'removeCrew'
+  | 'moveCrew'
   | 'setCrewCall'
   | 'addDepartment'
   | 'renameDepartment'
@@ -102,6 +105,7 @@ export function createSharedActions(
           ),
         ),
       })),
+    moveCast: (from, to) => patch((d) => ({ ...d, cast: arrayMove(d.cast, from, to) })),
     setCastCall: (castId, p) =>
       patchDay((day) => ({
         ...day,
@@ -124,6 +128,7 @@ export function createSharedActions(
         crew: d.crew.filter((c) => c.id !== id),
         days: d.days.map((day) => stripPassenger({ ...day, crewCalls: omitKey(day.crewCalls, id) }, id)),
       })),
+    moveCrew: (from, to) => patch((d) => ({ ...d, crew: arrayMove(d.crew, from, to) })),
     setCrewCall: (crewId, p) =>
       patchDay((day) => ({
         ...day,

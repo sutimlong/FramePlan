@@ -171,3 +171,84 @@ describe('舊版（v2 以前）車表欄位轉換', () => {
     if (res.success) expect(res.data.days[0].vehicleSchedules.v1.passengerDetails.p1.alightPlace).toBe('片場大門')
   })
 })
+
+const sceneNotes = (res: ReturnType<typeof parse>) => {
+  if (!res.success) return undefined
+  const item = res.data.days[0].rundown[0]
+  return item.kind === 'scene' ? item.deptNotes : undefined
+}
+
+describe('SceneItem.deptNotes（部門說明）', () => {
+  it('已填寫的部門說明會保留（未勾選的項目不會有 key）', () => {
+    const raw = rawDoc()
+    raw.days[0].rundown = [
+      { id: 's1', kind: 'scene', deptNotes: { art: '桌椅換新', makeup: '底妝 B', hair: '假髮 A' } },
+    ]
+    const res = parse(raw)
+    expect(res.success).toBe(true)
+    expect(sceneNotes(res)).toEqual({ art: '桌椅換新', makeup: '底妝 B', hair: '假髮 A' })
+  })
+
+  it('舊檔沒有 deptNotes 欄位時補成空物件', () => {
+    const raw = rawDoc()
+    raw.days[0].rundown = [{ id: 's1', kind: 'scene', time: '08:00' }]
+    const res = parse(raw)
+    expect(res.success).toBe(true)
+    expect(sceneNotes(res)).toEqual({})
+  })
+
+  it('整欄型別錯誤時視為空物件，單一項目型別錯誤時視為空字串', () => {
+    const broken = rawDoc()
+    broken.days[0].rundown = [{ id: 's1', kind: 'scene', deptNotes: 'oops' }]
+    const res1 = parse(broken)
+    expect(res1.success).toBe(true)
+    expect(sceneNotes(res1)).toEqual({})
+
+    const badValue = rawDoc()
+    badValue.days[0].rundown = [{ id: 's1', kind: 'scene', deptNotes: { art: 123, props: '板車' } }]
+    const res2 = parse(badValue)
+    expect(res2.success).toBe(true)
+    expect(sceneNotes(res2)).toEqual({ art: '', props: '板車' })
+  })
+
+  it('未知的部門 key 會被忽略', () => {
+    const raw = rawDoc()
+    raw.days[0].rundown = [{ id: 's1', kind: 'scene', deptNotes: { art: '美術說明', sound: '收音說明' } }]
+    const res = parse(raw)
+    expect(res.success).toBe(true)
+    expect(sceneNotes(res)).toEqual({ art: '美術說明' })
+  })
+})
+
+describe('SceneItem.remarkOn（行程表備註勾選）', () => {
+  /** 取第一場的備註欄位（未通過驗證時回傳 undefined） */
+  const remarkFields = (res: ReturnType<typeof parse>) => {
+    if (!res.success) return undefined
+    const item = res.data.days[0].rundown[0]
+    return item.kind === 'scene' ? { remark: item.remark, remarkOn: item.remarkOn } : undefined
+  }
+
+  it('已勾選的備註（remarkOn: true）即使還沒輸入文字也會保留', () => {
+    const raw = rawDoc()
+    raw.days[0].rundown = [{ id: 's1', kind: 'scene', remarkOn: true }]
+    const res = parse(raw)
+    expect(res.success).toBe(true)
+    expect(remarkFields(res)).toEqual({ remark: '', remarkOn: true })
+  })
+
+  it('舊檔沒有 remarkOn 欄位時補成 false，已輸入的備註文字照常保留', () => {
+    const raw = rawDoc()
+    raw.days[0].rundown = [{ id: 's1', kind: 'scene', remark: '記得帶證件' }]
+    const res = parse(raw)
+    expect(res.success).toBe(true)
+    expect(remarkFields(res)).toEqual({ remark: '記得帶證件', remarkOn: false })
+  })
+
+  it('remarkOn 型別錯誤時視為未勾選', () => {
+    const raw = rawDoc()
+    raw.days[0].rundown = [{ id: 's1', kind: 'scene', remarkOn: 'yes' }]
+    const res = parse(raw)
+    expect(res.success).toBe(true)
+    expect(remarkFields(res)).toEqual({ remark: '', remarkOn: false })
+  })
+})
