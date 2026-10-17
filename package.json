@@ -1,7 +1,7 @@
 {
   "name": "frameplan",
   "productName": "FramePlan",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "FramePlan：本地端電影／影視通告表（Callsheet）與 Rundown 製作工具",
   "private": true,
   "type": "module",
@@ -23,7 +23,6 @@
     "qrcode": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-easy-crop": "^6.2.4",
     "slate": "^0.132.0",
     "slate-history": "^0.128.1",
     "slate-react": "^0.132.0",
