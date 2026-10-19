@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   uploadPdf: (opts) => ipcRenderer.invoke('pdf:upload', opts),
   getAppName: () => ipcRenderer.invoke('app:getName'),
   confirm: (opts) => ipcRenderer.invoke('app:confirm', opts),
+  checkUpdate: () => ipcRenderer.invoke('app:checkUpdate'),
+  openExternal: (url) => ipcRenderer.invoke('app:openExternal', url),
 
   onMenuNew: (cb) => on('menu:new', cb),
   onMenuOpen: (cb) => on('menu:open', cb),

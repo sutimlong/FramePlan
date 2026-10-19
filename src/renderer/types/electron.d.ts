@@ -1,4 +1,5 @@
 import type {
+  CheckUpdateResult,
   ConfirmOptions,
   OpenResult,
   PdfExportOptions,
@@ -18,6 +19,10 @@ export interface ElectronAPI {
   getAppName(): Promise<string>
   /** 以主程序原生對話框顯示確認訊息 */
   confirm(opts: ConfirmOptions): Promise<boolean>
+  /** 查詢 GitHub 最新 release；失敗時 ok 為 false */
+  checkUpdate(): Promise<CheckUpdateResult>
+  /** 以系統預設瀏覽器開啟外部連結（僅允許 https://） */
+  openExternal(url: string): Promise<void>
   onMenuNew(cb: () => void): () => void
   onMenuOpen(cb: () => void): () => void
   onMenuSave(cb: () => void): () => void

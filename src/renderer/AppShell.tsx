@@ -1,8 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Loader2, Printer } from 'lucide-react'
 import { useProjectStore } from '@/store/useProjectStore'
 import { exportPdf, newDocument, openFile, saveFile } from '@/lib/fileActions'
+import { APP_VERSION } from '@/lib/defaults'
+import { checkForUpdates, markSkippedVersion, type UpdateInfo } from '@/lib/updateCheck'
+import { UpdateReminder } from './components/UpdateReminder'
 import { Sidebar } from './components/layout/Sidebar'
 import { TopBar } from './components/layout/TopBar'
 import { DayBar } from './components/layout/DayBar'
@@ -76,6 +79,7 @@ export default function AppShell() {
   const loadCount = useProjectStore((s) => s.loadCount)
   const toast = useProjectStore((s) => s.toast)
   const clearToast = useProjectStore((s) => s.clearToast)
+  const [update, setUpdate] = useState<UpdateInfo | null>(null)
 
   useEffect(() => {
     const api = window.electronAPI
@@ -97,6 +101,13 @@ export default function AppShell() {
     return () => offs.forEach((off) => off())
   }, [])
 
+  // 啟動時檢查 GitHub 是否有新版本：每天最多偵測一次，已跳過的版本不再提醒
+  useEffect(() => {
+    void checkForUpdates(APP_VERSION).then((info) => {
+      if (info) setUpdate(info)
+    })
+  }, [])
+
   useEffect(() => {
     window.electronAPI?.setDirty(dirty)
   }, [dirty])
@@ -115,6 +126,18 @@ export default function AppShell() {
 
   // 切換天數或載入新檔案時，用 key 強制重新掛載，Slate 編輯器才會載入正確內容
   const contentKey = `${loadCount}:${view}:${view === 'project' || view === 'cast' ? 'shared' : dayId}`
+
+  // 前往下載：以系統預設瀏覽器開啟 GitHub 最新 release 頁面
+  const openDownload = () => {
+    if (update) void window.electronAPI?.openExternal(update.url)
+    setUpdate(null)
+  }
+
+  // 跳過此版本：記錄後不再提醒同一版本（出現更新版本時仍會提醒）
+  const skipVersion = () => {
+    if (update) markSkippedVersion(update.tag)
+    setUpdate(null)
+  }
 
   return (
     <div className="app">
@@ -151,6 +174,14 @@ export default function AppShell() {
           </motion.div>
         )}
       </AnimatePresence>
+      {update && (
+        <UpdateReminder
+          info={update}
+          onDownload={openDownload}
+          onSkip={skipVersion}
+          onClose={() => setUpdate(null)}
+        />
+      )}
     </div>
   )
 }

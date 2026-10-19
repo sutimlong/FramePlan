@@ -18,6 +18,10 @@ export const IPC = {
   menuSave: 'menu:save',
   menuSaveAs: 'menu:saveAs',
   menuExportPdf: 'menu:exportPdf',
+  /** 渲染端 → 主程序：查詢 GitHub 最新 release（tag 與下載頁網址） */
+  checkUpdate: 'app:checkUpdate',
+  /** 渲染端 → 主程序：以系統預設瀏覽器開啟外部連結 */
+  openExternal: 'app:openExternal',
 } as const
 
 /** 原生確認對話框的參數（對應 Electron 的 dialog.showMessageBox） */
@@ -31,6 +35,11 @@ export interface ConfirmOptions {
   /** 破壞性操作（例如刪除）時使用警告樣式 */
   danger?: boolean
 }
+
+/** GitHub 最新 release 檢查結果；tag 為 release 的 tag 名稱（例如 v1.3.0） */
+export type CheckUpdateResult =
+  | { ok: true; tag: string; url: string }
+  | { ok: false; error?: string }
 
 export interface SaveRequest {
   data: unknown
