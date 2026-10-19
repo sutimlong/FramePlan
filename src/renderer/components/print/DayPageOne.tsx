@@ -26,6 +26,8 @@ export function DayPageOne(ctx: DayCtx) {
   ]
   const hasExtras = extrasItems.length > 0
   const hasDeptNotes = deptNotes.length > 0
+  // 本日資訊的「通告備註」：有填才印，避免空白列佔位
+  const callNote = day.generalCallNote?.trim() ?? ''
 
   return (
     <>
@@ -42,6 +44,7 @@ export function DayPageOne(ctx: DayCtx) {
             <p className="meta">現場醫護：{dash(day.setMedic)}</p>
             <p className="meta">劇本版本：{dash(doc.project.scriptVersion)}</p>
             <p className="meta">排程版本：{day.scheduleVersion?.trim() ? day.scheduleVersion : formatTimestamp()}</p>
+            {callNote && <p className="meta">通告備註：{callNote}</p>}
           </div>
           {/* 地點欄位順序與「本日資訊」的地點卡一致：地點1 停車場、地點2 最近醫院、地點3 劇組辦公室、地點4 基地營 */}
           <div className="cs-places">
